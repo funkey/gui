@@ -5,7 +5,7 @@
 
 #include <gui/Signals.h>
 #include <gui/SwitchPainter.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 namespace gui {
 

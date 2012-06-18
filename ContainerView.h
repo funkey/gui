@@ -6,9 +6,7 @@
 #include <gui/IsPlacingStrategy.h>
 #include <gui/ContainerPainter.h>
 #include <gui/Signals.h>
-#include <pipeline.h>
-#include <pipeline/signals/Modified.h>
-#include <pipeline/signals/Update.h>
+#include <pipeline/all.h>
 #include <signals/Slots.h>
 #include <util/point.hpp>
 #include <util/Logger.h>

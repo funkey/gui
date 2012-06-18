@@ -5,7 +5,7 @@
 #include <gui/HorizontalPlacing.h>
 #include <gui/NumberView.h>
 #include <gui/TextView.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "SliderImpl.h"
 
 namespace gui {

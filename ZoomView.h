@@ -1,7 +1,7 @@
 #ifndef GUI_ZOOM_VIEW_H__
 #define GUI_ZOOM_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <gui/ZoomPainter.h>
 #include <gui/Signals.h>
 #include <gui/Keys.h>

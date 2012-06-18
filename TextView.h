@@ -1,7 +1,7 @@
 #ifndef GUI_TEXT_VIEW_H__
 #define GUI_TEXT_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <gui/TextPainter.h>
 #include <gui/Signals.h>
 

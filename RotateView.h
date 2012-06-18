@@ -1,7 +1,7 @@
 #ifndef GUI_ROTATE_VIEW_H__
 #define GUI_ROTATE_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <gui/RotatePainter.h>
 #include <gui/Signals.h>
 #include <gui/Keys.h>

@@ -6,7 +6,7 @@
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/TextView.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "SwitchImpl.h"
 
 namespace gui {
