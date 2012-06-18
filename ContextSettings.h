@@ -9,8 +9,8 @@ struct ContextSettings {
 			unsigned int depthBits_ = 0,
 			unsigned int stencilBits_ = 0,
 			unsigned int antialiasingLevel_ = 0,
-			unsigned int majorVersion_ = 3,
-			unsigned int minorVersion_ = 3,
+			unsigned int majorVersion_ = 2,
+			unsigned int minorVersion_ = 9,
 			bool         vsync_ = true) :
 		depthBits(depthBits_),
 		stencilBits(stencilBits_),
