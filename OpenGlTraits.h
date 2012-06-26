@@ -1,6 +1,8 @@
 #ifndef OPENGL_TRAITS_H__
 #define OPENGL_TRAITS_H__
 
+#include <boost/array.hpp>
+
 #include <config.h>
 
 #ifdef HAVE_VIGRA
@@ -66,7 +68,7 @@ struct pixel_format_traits {
 template <typename ValueType>
 struct pixel_format_traits<vigra::RGBValue<ValueType> > {
 
-	typedef ValueType          value_type;
+	typedef ValueType value_type;
 
 	enum { gl_format = GL_RGB };
 	enum { gl_type   = pixel_type_traits<value_type>::gl_type };
@@ -87,6 +89,16 @@ struct pixel_format_traits<cairo_pixel_t> {
 };
 
 #endif
+
+// specialisation: boost::array<???, 4>
+template <typename ValueType>
+struct pixel_format_traits<boost::array<ValueType, 4> > {
+
+	typedef ValueType value_type;
+
+	enum { gl_format = GL_RGBA };
+	enum { gl_type   = pixel_type_traits<value_type>::gl_type };
+};
 
 } // namspace detail
 
