@@ -16,12 +16,13 @@ void glCheckError(const char* file, const char* function, unsigned int line) {
 	GLenum error = glGetError();
 
 	if (error != GL_NO_ERROR)
-		boost::throw_exception(
+		BOOST_THROW_EXCEPTION(
 				boost::enable_error_info(OpenGlError())
 						<< boost::throw_function(function)
 						<< boost::throw_file(file)
 						<< boost::throw_line(line)
-						<< error_message(static_cast<const char*>((void*)gluErrorString(error))));
+						<< error_message(static_cast<const char*>((void*)gluErrorString(error)))
+						<< STACK_TRACE);
 }
 
 } // namespace priv

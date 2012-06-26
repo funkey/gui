@@ -25,7 +25,7 @@ void glCheckError(const char* file, const char* function, unsigned int line);
 #ifndef NDEBUG
 
 	// executes an OpenGl call and throw an exception if an OpenGl error occured
-	#define glCheck(call) ((call), priv::glCheckError(__FILE__, BOOST_CURRENT_FUNCTION, __LINE__))
+	#define glCheck(call) ((call), gui::priv::glCheckError(__FILE__, BOOST_CURRENT_FUNCTION, __LINE__))
 
 #else
 
