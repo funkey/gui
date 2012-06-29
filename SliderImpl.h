@@ -12,13 +12,15 @@ namespace gui {
 /**
  * A simple controller for a numeric value in specified range.
  */
-class SliderImpl : public pipeline::ProcessNode {
+class SliderImpl : public pipeline::SimpleProcessNode {
 
 public:
 
 	SliderImpl(double min, double max, double value);
 
 private:
+
+	void updateOutputs() {}
 
 	// callback on mouse events
 	void onMouseUp(MouseUp& signal);
@@ -30,16 +32,10 @@ private:
 	void onMouseMove(MouseMove& signal);
 
 	// the current value of the slider
-	pipeline::Output<double>     _value;
+	pipeline::Output<double> _value;
 
 	// the painter to draw the slider
 	pipeline::Output<SliderPainter> _painter;
-
-	// signal to send when the value was changed
-	signals::Slot<pipeline::Modified> _valueModified;
-
-	// signal to send when the painter was changed
-	signals::Slot<pipeline::Modified> _painterModified;
 
 	// the minimal value
 	double _min;

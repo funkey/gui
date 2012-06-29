@@ -18,9 +18,6 @@ SliderImpl::SliderImpl(double min, double max, double value) :
 	registerOutput(_value, "value");
 	registerOutput(_painter, "painter");
 
-	_value.registerForwardSlot(_valueModified);
-
-	_painter.registerForwardSlot(_painterModified);
 	_painter.registerForwardCallback(&SliderImpl::onMouseUp, this);
 	_painter.registerForwardCallback(&SliderImpl::onMouseDown, this);
 	_painter.registerForwardCallback(&SliderImpl::onMouseMove, this);
@@ -44,7 +41,7 @@ SliderImpl::onMouseUp(MouseUp& signal) {
 		if (!graspSize.contains(pos)) {
 
 			_painter->setHighlight(false);
-			_painterModified();
+			setDirty(_painter);
 		}
 
 		_dragging = false;
@@ -99,7 +96,7 @@ SliderImpl::onMouseMove(MouseMove& signal) {
 			_mouseOver = true;
 			_painter->setHighlight(true);
 
-			_painterModified();
+			setDirty(_painter);
 		}
 
 	} else {
@@ -111,8 +108,8 @@ SliderImpl::onMouseMove(MouseMove& signal) {
 			if (!_dragging) {
 
 				_painter->setHighlight(false);
-				_painterModified();
 
+				setDirty(_painter);
 			}
 		}
 	}
@@ -142,8 +139,8 @@ SliderImpl::onMouseMove(MouseMove& signal) {
 
 			_painter->setValue(*_value);
 
-			_valueModified();
-			_painterModified();
+			setDirty(_value);
+			setDirty(_painter);
 
 			// let the sender know that we took care of this input event
 			signal.processed = true;
