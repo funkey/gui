@@ -11,7 +11,7 @@
 #include <GL/glu.h>
 #include <GL/glx.h>
 
-#include <exceptions.h>
+#include <util/exceptions.h>
 
 namespace gui {
 

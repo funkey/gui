@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include <util/Logger.h>
-#include <exceptions.h>
+#include <util/exceptions.h>
 #include "TextPainter.h"
 
 using std::string;
