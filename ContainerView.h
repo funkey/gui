@@ -99,6 +99,8 @@ private:
 
 	void onContentChanged(const ContentChanged& signal) {
 
+		LOG_ALL(containerviewlog) << "got a ContentChanged signal -- passing it on" << std::endl;
+
 		_dirty = true;
 
 		_contentChanged(signal);
