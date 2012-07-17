@@ -12,13 +12,15 @@ namespace gui {
 /**
  * A simple controller for a boolean value.
  */
-class SwitchImpl : public pipeline::ProcessNode {
+class SwitchImpl : public pipeline::SimpleProcessNode {
 
 public:
 
 	SwitchImpl();
 
 private:
+
+	void updateOutputs();
 
 	// callback on mouse events
 	void onMouseUp(MouseUp& signal);
@@ -31,12 +33,6 @@ private:
 
 	// the painter to draw the switch
 	pipeline::Output<SwitchPainter> _painter;
-
-	// signal to send when the value was changed
-	signals::Slot<pipeline::Modified> _valueModified;
-
-	// signal to send when the painter was changed
-	signals::Slot<pipeline::Modified> _painterModified;
 
 	// indicates that the mouse is currently over the switch
 	bool _mouseOver;

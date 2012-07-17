@@ -15,10 +15,14 @@ SwitchImpl::SwitchImpl() :
 	registerOutput(_value, "value");
 	registerOutput(_painter, "painter");
 
-	_value.registerForwardSlot(_valueModified);
-	_painter.registerForwardSlot(_painterModified);
 	_painter.registerForwardCallback(&SwitchImpl::onMouseUp, this);
 	_painter.registerForwardCallback(&SwitchImpl::onMouseMove, this);
+}
+
+void
+SwitchImpl::updateOutputs() {
+
+	*_value = _painter->getValue();
 }
 
 void
@@ -36,9 +40,9 @@ SwitchImpl::onMouseUp(MouseUp& signal) {
 
 			_painter->setValue(*_value);
 
-			_painterModified();
+			setDirty(_painter);
 
-			_valueModified();
+			setDirty(_value);
 		}
 	}
 }
@@ -53,9 +57,10 @@ SwitchImpl::onMouseMove(MouseMove& signal) {
 		if (_mouseOver == false) {
 
 			_mouseOver = true;
+
 			_painter->setHighlight(true);
 
-			_painterModified();
+			setDirty(_painter);
 		}
 
 	} else {
@@ -65,7 +70,8 @@ SwitchImpl::onMouseMove(MouseMove& signal) {
 			_mouseOver = false;
 
 			_painter->setHighlight(false);
-			_painterModified();
+
+			setDirty(_painter);
 		}
 	}
 }

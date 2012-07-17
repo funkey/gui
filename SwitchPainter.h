@@ -12,7 +12,9 @@ public:
 
 	SwitchPainter(bool value = false);
 
-	void setValue(double value);
+	void setValue(bool value);
+
+	bool getValue();
 
 	void setHighlight(bool highlight);
 

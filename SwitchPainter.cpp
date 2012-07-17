@@ -11,9 +11,15 @@ SwitchPainter::SwitchPainter(bool value) :
 }
 
 void
-SwitchPainter::setValue(double value) {
+SwitchPainter::setValue(bool value) {
 
 	_value = value;
+}
+
+bool
+SwitchPainter::getValue() {
+
+	return _value;
 }
 
 void
