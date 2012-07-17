@@ -40,6 +40,9 @@ SliderPainter::draw(
 
 	const util::rect<double>& size = getSize();
 
+	glLineWidth(1);
+	glDisable(GL_LINE_SMOOTH);
+
 	glBegin(GL_LINES);
 	glVertex2d(size.minX + size.height()/2, size.minY + size.height()/2);
 	glVertex2d(size.maxX - size.height()/2, size.minY + size.height()/2);
