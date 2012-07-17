@@ -35,7 +35,7 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	glRotated(_w, _x, _y, _z);
 	glTranslated(-_centerX, -_centerY, -_centerZ);
 
-	_content->draw(roi, resolution);
+	_content->draw(roi + util::point<double>(_centerX, _centerY), resolution);
 
 	glPopMatrix();
 }
