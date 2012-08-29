@@ -22,6 +22,11 @@ TextPainter::TextPainter(string text) :
 	_textColor(4, 1.0),
 	_context(0),
 	_surface(0),
+	_fontOptions(0),
+	_glRoi(0, 0, 0, 0),
+	_glSize(0, 0, 0, 0),
+	_glPadding(0, 0),
+	_rasterPos(0, 0),
 	_lastResolution(1, 1),
 	_lastRoi(0, 0, 0, 0) {
 

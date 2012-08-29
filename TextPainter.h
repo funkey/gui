@@ -88,9 +88,6 @@ private:
 	// the extents of the text in cairo units
 	cairo_text_extents_t _extents;
 
-	// reload texture only on change
-	bool                _textChanged;
-
 	// the relevant part of the text in gl units
 	util::rect<double>  _glRoi;
 

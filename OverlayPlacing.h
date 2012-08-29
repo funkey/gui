@@ -42,7 +42,7 @@ const std::vector<point<double> >&
 OverlayPlacing::getOffsets(const ViewIterator& begin, const ViewIterator& end) {
 
 	// there's not too much to do here -- the offsets are all zero
-	_offsets.resize(end - begin);
+	_offsets.resize(end - begin, point<double>(0, 0));
 
 	return _offsets;
 }

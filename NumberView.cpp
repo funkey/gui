@@ -6,6 +6,7 @@
 namespace gui {
 
 NumberView::NumberView(int precision) :
+	_dirty(false),
 	_precision(precision) {
 
 	registerInput(_value, "value");
