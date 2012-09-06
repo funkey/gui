@@ -130,7 +130,7 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 
 	_mouseDown(zoomedSignal);
 
-	if (zoomedSignal.processed)
+	if (zoomedSignal.processed || !(signal.modifiers & keys::ControlDown))
 		return;
 
 	util::point<double> position = signal.position;
@@ -151,9 +151,9 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 	position.x /= _scale;
 	position.y /= _scale;
 
-	// if control is pressed, increase zoom speed
+	// if shift is pressed, increase zoom speed
 	double zoomStep = _zoomStep;
-	if (signal.modifiers & keys::ControlDown)
+	if (signal.modifiers & keys::ShiftDown)
 		zoomStep *= 2;
 
 	// mouse wheel up
@@ -196,7 +196,7 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 
 	_mouseMove(zoomedSignal);
 
-	if (zoomedSignal.processed)
+	if (zoomedSignal.processed || !(signal.modifiers & keys::ControlDown))
 		return;
 
 	if (!_dragging) {
@@ -207,7 +207,7 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 	LOG_ALL(zoomviewlog) << "I am in dragging mode" << std::endl;
 
 	double amp = 1.0;
-	if (signal.modifiers & keys::ControlDown)
+	if (signal.modifiers & keys::ShiftDown)
 		amp = 10.0;
 
 	// mouse is dragged
