@@ -32,6 +32,7 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 
 	glPushMatrix();
 
+	glTranslated( _centerX,  _centerY,  _centerZ);
 	glRotated(_w, _x, _y, _z);
 	glTranslated(-_centerX, -_centerY, -_centerZ);
 
@@ -52,14 +53,6 @@ RotatePainter::updateSize() {
 	_centerZ = 0;
 
 	LOG_ALL(rotatepainterlog) << "center is at " << _centerX << ", " << _centerY << std::endl;
-
-	// move the center to (0, 0, 0)
-	size.minX -= _centerX;
-	size.maxX -= _centerX;
-	size.minY -= _centerY;
-	size.maxY -= _centerY;
-
-	LOG_ALL(rotatepainterlog) << "new size is " << size << std::endl;
 
 	// the reported size should be the size of the original content
 	setSize(size);
