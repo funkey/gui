@@ -128,10 +128,11 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 	zoomedSignal.position /= _scale;
 	zoomedSignal.position -= _shift;
 
-	_mouseDown(zoomedSignal);
+	if (!(signal.modifiers & keys::ControlDown)) {
 
-	if (zoomedSignal.processed || !(signal.modifiers & keys::ControlDown))
+		_mouseDown(zoomedSignal);
 		return;
+	}
 
 	util::point<double> position = signal.position;
 
@@ -194,10 +195,12 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 	zoomedSignal.position /= _scale;
 	zoomedSignal.position -= _shift;
 
-	_mouseMove(zoomedSignal);
 
-	if (zoomedSignal.processed || !(signal.modifiers & keys::ControlDown))
+	if (!(signal.modifiers & keys::ControlDown)) {
+
+		_mouseMove(zoomedSignal);
 		return;
+	}
 
 	if (!_dragging) {
 
