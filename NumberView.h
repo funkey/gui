@@ -7,7 +7,7 @@
 
 namespace gui {
 
-class NumberView : public pipeline::ProcessNode {
+class NumberView : public pipeline::SimpleProcessNode {
 
 public:
 
@@ -20,19 +20,15 @@ public:
 
 private:
 
-	void onModified(const pipeline::Modified& signal);
-	void onUpdate(const pipeline::Update& signal);
+	void updateOutputs();
 
 	pipeline::Input<double>       _value;
 	pipeline::Output<TextPainter> _painter;
 
-	signals::Slot<const pipeline::Modified> _modified;
 	signals::Slot<const SizeChanged>        _sizeChanged;
 
 	// the number of digits to show after the comma
 	int _precision;
-
-	bool _dirty;
 };
 
 } // namespace gui
