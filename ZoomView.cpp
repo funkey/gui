@@ -8,7 +8,8 @@ static logger::LogChannel zoomviewlog("zoomviewlog", "[ZoomView] ");
 ZoomView::ZoomView() :
 		_scale(1.0),
 		_shift(0.0, 0.0),
-		_zoomStep(1.1) {
+		_zoomStep(1.1),
+		_dragging(false) {
 
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");

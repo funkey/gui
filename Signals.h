@@ -111,7 +111,9 @@ class MouseSignal : public InputSignal {
 
 public:
 
-	MouseSignal() {}
+	MouseSignal() :
+		position(0, 0),
+		modifiers(NoModifier) {}
 
 	MouseSignal(const util::point<double>& position_, const Modifiers& modifiers_) :
 		position(position_),

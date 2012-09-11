@@ -491,7 +491,7 @@ XWindow::keycodeToKey(unsigned int keycode) {
 Modifiers
 XWindow::stateToModifiers(unsigned int state) {
 
-	Modifiers modifiers;
+	Modifiers modifiers = NoModifier;
 
 	if (state & ControlMask)
 		modifiers = static_cast<Modifiers>(modifiers | keys::ControlDown);
