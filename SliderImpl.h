@@ -12,7 +12,7 @@ namespace gui {
 /**
  * A simple controller for a numeric value in specified range.
  */
-class SliderImpl : public pipeline::SimpleProcessNode {
+class SliderImpl : public pipeline::SimpleProcessNode<> {
 
 public:
 

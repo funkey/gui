@@ -7,7 +7,7 @@
 
 namespace gui {
 
-class NumberView : public pipeline::SimpleProcessNode {
+class NumberView : public pipeline::SimpleProcessNode<> {
 
 public:
 

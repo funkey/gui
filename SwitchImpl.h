@@ -12,7 +12,7 @@ namespace gui {
 /**
  * A simple controller for a boolean value.
  */
-class SwitchImpl : public pipeline::SimpleProcessNode {
+class SwitchImpl : public pipeline::SimpleProcessNode<> {
 
 public:
 

@@ -9,7 +9,7 @@ using namespace boost;
  * Checking class for concept Image.
  */
 template <typename Impl>
-struct IsImage : CopyConstructible<Impl> {
+struct IsImage {
 
 public:
 

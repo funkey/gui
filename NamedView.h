@@ -11,7 +11,7 @@
 
 namespace gui {
 
-class NamedView : public pipeline::SimpleProcessNode {
+class NamedView : public pipeline::SimpleProcessNode<> {
 
 public:
 
