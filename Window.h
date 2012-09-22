@@ -10,9 +10,7 @@
 #include <gui/GlContextCreator.h>
 #include <gui/Signals.h>
 #include <gui/Painter.h>
-#include <pipeline/signals/Update.h>
-#include <pipeline/signals/Modified.h>
-#include <pipeline/ProcessNode.h>
+#include <pipeline/all.h>
 #include <signals/Slot.h>
 
 // TODO: let cmake figure that out
@@ -44,7 +42,7 @@ using namespace util;
  * Platform independent window class. Allows views to be attached to it to draw
  * OpenGL content.
  */
-class Window : public pipeline::ProcessNode, public WindowType, public GlContextCreator {
+class Window : public pipeline::SimpleProcessNode<>, public WindowType, public GlContextCreator {
 
 public:
 
@@ -89,6 +87,14 @@ public:
 	GlContext* createGlContext();
 
 private:
+
+	using WindowType::setDirty;
+
+	/**
+	 * Overwritten from SimpleProcessNode. We are a sink, there's nothing to do
+	 * here.
+	 */
+	void updateOutputs() {};
 
 	/**
 	 * Pipeline callback for new input connections.
@@ -197,7 +203,6 @@ private:
 	pipeline::Input<Painter> _painter;
 
 	// backward signals
-	signals::Slot<const pipeline::Update> _update;
 	signals::Slot<const Resize>           _resize;
 	signals::Slot<KeyDown>                _keyDown;
 	signals::Slot<KeyUp>                  _keyUp;

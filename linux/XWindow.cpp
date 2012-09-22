@@ -319,8 +319,9 @@ XWindow::processEvents() {
 	// redraw only if needed
 	if (isDirty() && !closed()) {
 
-		redraw();
 		setDirty(false);
+
+		redraw();
 	}
 }
 

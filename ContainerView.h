@@ -16,7 +16,7 @@ namespace gui {
 static logger::LogChannel containerviewlog("containerviewlog", "[ContainerView] ");
 
 template <class PlacingStrategy>
-class ContainerView : public pipeline::ProcessNode, public PlacingStrategy {
+class ContainerView : public pipeline::SimpleProcessNode<>, public PlacingStrategy {
 
 	BOOST_CONCEPT_ASSERT((IsPlacingStrategy<PlacingStrategy>));
 
@@ -29,25 +29,21 @@ public:
 
 		_painters.registerBackwardCallback(&ContainerView::onPainterAdded, this);
 		_painters.registerBackwardCallback(&ContainerView::onPainterRemoved, this);
-		_painters.registerBackwardCallback(&ContainerView::onModified, this);
 		_painters.registerBackwardCallback(&ContainerView::onContentChanged, this);
 		_painters.registerBackwardCallback(&ContainerView::onSizeChanged, this);
 
 		_painters.registerBackwardSlot(_keyDown);
 		_painters.registerBackwardSlot(_keyUp);
-		_painters.registerBackwardSlot(_update);
 		_painters.registerBackwardSlots(_mouseMoves);
 		_painters.registerBackwardSlots(_mouseDowns);
 		_painters.registerBackwardSlots(_mouseUps);
 
-		_container.registerForwardCallback(&ContainerView::onUpdate, this);
 		_container.registerForwardCallback(&ContainerView::onKeyDown, this);
 		_container.registerForwardCallback(&ContainerView::onKeyUp, this);
 		_container.registerForwardCallback(&ContainerView::onMouseMove, this);
 		_container.registerForwardCallback(&ContainerView::onMouseDown, this);
 		_container.registerForwardCallback(&ContainerView::onMouseUp, this);
 
-		_container.registerForwardSlot(_modified);
 		_container.registerForwardSlot(_contentChanged);
 		_container.registerForwardSlot(_sizeChanged);
 	}
@@ -59,6 +55,12 @@ public:
 
 private:
 
+	void updateOutputs() {
+
+		updateOffsets();
+		_container->setOffsets(_offsets);
+	}
+
 	void onPainterAdded(const pipeline::InputAdded<Painter>& signal) {
 
 		LOG_ALL(containerviewlog) << "got a new painter " << typeName(*signal.getData()) << std::endl;
@@ -68,11 +70,7 @@ private:
 
 		_container->add(signal.getData());
 
-		updateOffsets();
-
-		_container->setOffsets(_offsets);
-
-		_dirty = true;
+		setDirty(_container);
 
 		_contentChanged(ContentChanged());
 		_sizeChanged(SizeChanged(_container->getSize()));
@@ -82,26 +80,17 @@ private:
 
 		_container->remove(signal.getData());
 
-		updateOffsets();
-
-		_container->setOffsets(_offsets);
+		setDirty(_container);
 
 		_contentChanged(ContentChanged());
 		_sizeChanged(SizeChanged(_container->getSize()));
-	}
-
-	void onModified(const pipeline::Modified& signal) {
-
-		_dirty = true;
-
-		_modified(signal);
 	}
 
 	void onContentChanged(const ContentChanged& signal) {
 
 		LOG_ALL(containerviewlog) << "got a ContentChanged signal -- passing it on" << std::endl;
 
-		_dirty = true;
+		setDirty(_container);
 
 		_contentChanged(signal);
 	}
@@ -110,27 +99,9 @@ private:
 
 		LOG_ALL(containerviewlog) << "got a SizeChanged signal -- recomputing my size" << std::endl;
 
-		updateOffsets();
-
-		_container->setOffsets(_offsets);
+		setDirty(_container);
 
 		_sizeChanged(SizeChanged(_container->getSize()));
-	}
-
-	void onUpdate(const pipeline::Update& signal) {
-
-		LOG_ALL(containerviewlog) << "got an update signal" << std::endl;
-
-		if (_dirty) {
-
-			LOG_ALL(containerviewlog) << "I am dirty -- asking for updates" << std::endl;
-
-			_update(signal);
-
-			_dirty = false;
-		}
-
-		LOG_ALL(containerviewlog) << "I am up-to-date" << std::endl;
 	}
 
 	void onKeyDown(const KeyDown& signal) {
@@ -213,7 +184,6 @@ private:
 
 	// backward signals
 
-	signals::Slot<const pipeline::Update> _update;
 	signals::Slot<const KeyDown>          _keyDown;
 	signals::Slot<const KeyUp>            _keyUp;
 	signals::Slots<const MouseMove>       _mouseMoves;
@@ -222,15 +192,11 @@ private:
 
 	// forward signals
 
-	signals::Slot<const pipeline::Modified>  _modified;
 	signals::Slot<const ContentChanged>      _contentChanged;
 	signals::Slot<const SizeChanged>         _sizeChanged;
 
 	// the offsets of the painters in the container
 	std::vector<util::point<double> > _offsets;
-
-	// indicate that the content of the container changed
-	bool _dirty;
 };
 
 } // namespace gui

@@ -9,7 +9,7 @@
 
 namespace gui {
 
-class ZoomView : public pipeline::ProcessNode {
+class ZoomView : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -17,15 +17,13 @@ public:
 
 private:
 
-	void onInputSet(const pipeline::InputSet<Painter>& signal);
+	void updateOutputs();
 
-	void onModified(const pipeline::Modified& signal);
+	void onInputSet(const pipeline::InputSet<Painter>& signal);
 
 	void onContentChanged(const ContentChanged& signal);
 
 	void onSizeChanged(const SizeChanged& signal);
-
-	void onUpdate(const pipeline::Update& signal);
 
 	void onKeyUp(const KeyUp& signal);
 
@@ -38,13 +36,10 @@ private:
 	void onMouseMove(const MouseMove& signal);
 
 	// input/output
-
 	pipeline::Input<Painter>      _content;
 	pipeline::Output<ZoomPainter> _zoomed;
 
 	// backward communications
-
-	signals::Slot<const pipeline::Update> _update;
 	signals::Slot<const KeyDown>          _keyDown;
 	signals::Slot<const KeyUp>            _keyUp;
 	signals::Slot<const MouseDown>        _mouseDown;
@@ -52,8 +47,6 @@ private:
 	signals::Slot<const MouseMove>        _mouseMove;
 
 	// forward communications
-
-	signals::Slot<const pipeline::Modified>  _modified;
 	signals::Slot<const ContentChanged>      _contentChanged;
 	signals::Slot<const SizeChanged>         _sizeChanged;
 

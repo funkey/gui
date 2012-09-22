@@ -14,26 +14,29 @@ ZoomView::ZoomView() :
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");
 
-	_content.registerBackwardSlot(_update);
 	_content.registerBackwardSlot(_keyDown);
 	_content.registerBackwardSlot(_keyUp);
 	_content.registerBackwardSlot(_mouseDown);
 	_content.registerBackwardSlot(_mouseUp);
 	_content.registerBackwardSlot(_mouseMove);
 	_content.registerBackwardCallback(&ZoomView::onInputSet, this);
-	_content.registerBackwardCallback(&ZoomView::onModified, this);
 	_content.registerBackwardCallback(&ZoomView::onContentChanged, this);
 	_content.registerBackwardCallback(&ZoomView::onSizeChanged, this);
 
-	_zoomed.registerForwardSlot(_modified);
 	_zoomed.registerForwardSlot(_contentChanged);
 	_zoomed.registerForwardSlot(_sizeChanged);
-	_zoomed.registerForwardCallback(&ZoomView::onUpdate, this);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
 	_zoomed.registerForwardCallback(&ZoomView::onMouseUp, this);
 	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
 	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
+}
+
+void
+ZoomView::updateOutputs() {
+
+	_zoomed->setScale(_scale);
+	_zoomed->setShift(_shift);
 }
 
 void
@@ -46,14 +49,10 @@ ZoomView::onInputSet(const pipeline::InputSet<Painter>& signal) {
 
 	_zoomed->setContent(_content);
 
-	_modified();
-}
+	setDirty(_zoomed);
 
-void
-ZoomView::onModified(const pipeline::Modified& signal) {
-
-	// just pass this signal on
-	_modified();
+	_contentChanged();
+	_sizeChanged(SizeChanged(_zoomed->getSize()));
 }
 
 void
@@ -68,15 +67,8 @@ ZoomView::onSizeChanged(const SizeChanged& signal) {
 	_zoomed->updateSize();
 
 	_sizeChanged(SizeChanged(_zoomed->getSize()));
-}
 
-void
-ZoomView::onUpdate(const pipeline::Update& signal) {
-
-	_update(signal);
-
-	_zoomed->setScale(_scale);
-	_zoomed->setShift(_shift);
+	setDirty(_zoomed);
 }
 
 void
@@ -98,7 +90,7 @@ ZoomView::onKeyDown(KeyDown& signal) {
 		_scale = 1.0;
 		_shift = util::point<double>(0.0, 0.0);
 
-		_modified();
+		setDirty(_zoomed);
 
 		signal.processed = true;
 
@@ -184,7 +176,7 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 							 << ", position was " << position << std::endl;
 	}
 
-	_modified();
+	setDirty(_zoomed);
 }
 
 void
@@ -225,9 +217,7 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 
 		_buttonDown = signal.position;
 
-		_zoomed->setShift(_shift);
-
-		_modified();
+		setDirty(_zoomed);
 
 	} else {
 

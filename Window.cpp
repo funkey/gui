@@ -34,7 +34,6 @@ Window::Window(
 	registerInput(_painter, "painter");
 
 	// register backward signals
-	_painter.registerBackwardSlot(_update);
 	_painter.registerBackwardSlot(_resize);
 	_painter.registerBackwardSlot(_keyDown);
 	_painter.registerBackwardSlot(_keyUp);
@@ -43,8 +42,8 @@ Window::Window(
 	_painter.registerBackwardSlot(_mouseUp);
 
 	// register backward callbacks
-	_painter.registerBackwardCallback(&Window::onModified, this);
 	_painter.registerBackwardCallback(&Window::onInputAdded, this);
+	_painter.registerBackwardCallback(&Window::onModified, this);
 	_painter.registerBackwardCallback(&Window::onSizeChanged, this);
 
 	// initiate first redraw
@@ -205,8 +204,8 @@ Window::redraw() {
 
 	if (_painter) {
 
-		// send an update signal backwards in the pipeline
-		_update(pipeline::Update());
+		// make sure the painter is up-to-date
+		updateInputs();
 
 		// draw the updated painter
 		_painter->draw(_region, point<double>(1.0, 1.0));
