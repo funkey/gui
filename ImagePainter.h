@@ -363,7 +363,7 @@ template <typename Image, typename Pointer>
 void
 ImagePainter<Image, Pointer>::reloadTexture() {
 
-	if (!_image) {
+	if (!_image || _image->width()*_image->height() == 0) {
 
 		LOG_ALL(imagepainterlog) << "image was not initialised..." << std::endl;
 		return;
