@@ -71,6 +71,11 @@ public:
 	 */
 	void setOffsets(const std::vector<util::point<double> >& offsets);
 
+	/**
+	 * Copy assignment.
+	 */
+	ContainerPainter& operator=(const ContainerPainter& other);
+
 private:
 
 	/**

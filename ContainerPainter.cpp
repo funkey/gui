@@ -168,4 +168,13 @@ ContainerPainter::setOffsets(const std::vector<util::point<double> >& offsets) {
 	updateSize();
 }
 
+ContainerPainter&
+ContainerPainter::operator=(const ContainerPainter& other) {
+
+	LOG_DEBUG(containerpainterlog) << "assigning new content" << std::endl;
+
+	setSize(other.getSize());
+	_painterOffsets = other._painterOffsets;
+}
+
 } // namespace gui
