@@ -22,13 +22,15 @@ class ContainerView : public pipeline::SimpleProcessNode<>, public PlacingStrate
 
 public:
 
-	ContainerView() {
+	ContainerView(std::string name = "") :
+			_name(name) {
 
 		registerInputs(_painters, "painters");
 		registerOutput(_container, "container");
 
 		_painters.registerBackwardCallback(&ContainerView::onPainterAdded, this);
 		_painters.registerBackwardCallback(&ContainerView::onPainterRemoved, this);
+		_painters.registerBackwardCallback(&ContainerView::onPaintersCleared, this);
 		_painters.registerBackwardCallback(&ContainerView::onContentChanged, this);
 		_painters.registerBackwardCallback(&ContainerView::onSizeChanged, this);
 
@@ -50,7 +52,7 @@ public:
 
 	~ContainerView() {
 
-		LOG_DEBUG(containerviewlog) << "destructed" << std::endl;
+		LOG_DEBUG(containerviewlog) << _name << ": " << "destructed" << std::endl;
 	}
 
 private:
@@ -63,7 +65,7 @@ private:
 
 	void onPainterAdded(const pipeline::InputAdded<Painter>& signal) {
 
-		LOG_ALL(containerviewlog) << "got a new painter " << typeName(*signal.getData()) << std::endl;
+		LOG_ALL(containerviewlog) << _name << ": " << "got a new painter " << typeName(*signal.getData()) << std::endl;
 
 		if (!_container)
 			_container.createData();
@@ -78,7 +80,21 @@ private:
 
 	void onPainterRemoved(const pipeline::InputRemoved<Painter>& signal) {
 
+		LOG_ALL(containerviewlog) << _name << ": " << "painter removed " << typeName(*signal.getData()) << std::endl;
+
 		_container->remove(signal.getData());
+
+		setDirty(_container);
+
+		_contentChanged(ContentChanged());
+		_sizeChanged(SizeChanged(_container->getSize()));
+	}
+
+	void onPaintersCleared(const pipeline::InputsCleared& signal) {
+
+		LOG_ALL(containerviewlog) << _name << ": " << "painters cleared" << std::endl;
+
+		_container->clear();
 
 		setDirty(_container);
 
@@ -88,7 +104,7 @@ private:
 
 	void onContentChanged(const ContentChanged& signal) {
 
-		LOG_ALL(containerviewlog) << "got a ContentChanged signal -- passing it on" << std::endl;
+		LOG_ALL(containerviewlog) << _name << ": " << "got a ContentChanged signal -- passing it on" << std::endl;
 
 		setDirty(_container);
 
@@ -97,7 +113,7 @@ private:
 
 	void onSizeChanged(const SizeChanged& signal) {
 
-		LOG_ALL(containerviewlog) << "got a SizeChanged signal -- recomputing my size" << std::endl;
+		LOG_ALL(containerviewlog) << _name << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
 
 		setDirty(_container);
 
@@ -170,7 +186,7 @@ private:
 
 	void updateOffsets() {
 
-		LOG_ALL(containerviewlog) << "updating offsets of painters:" << std::endl;
+		LOG_ALL(containerviewlog) << _name << ": " << "updating offsets of painters:" << std::endl;
 		for (unsigned int i = 0; i < _painters.size(); i++)
 			LOG_ALL(containerviewlog) << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
 
@@ -197,6 +213,9 @@ private:
 
 	// the offsets of the painters in the container
 	std::vector<util::point<double> > _offsets;
+
+	// a name to identify this view in the logs
+	std::string _name;
 };
 
 } // namespace gui
