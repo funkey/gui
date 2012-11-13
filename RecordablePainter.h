@@ -10,6 +10,13 @@ class RecordablePainter : public Painter {
 
 public:
 
+	RecordablePainter(std::string name = "");
+
+	/**
+	 * Destructor to free display list.
+	 */
+	virtual ~RecordablePainter();
+
 	/**
 	 * Draws the recorded content of this painter.
 	 */
