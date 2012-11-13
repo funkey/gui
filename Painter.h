@@ -14,8 +14,9 @@ public:
 	/**
 	 * Default constructor.
 	 */
-	Painter() :
-		_size(0, 0, 1, 1) {}
+	Painter(std::string name = "") :
+		_size(0, 0, 1, 1),
+		_name(name) {}
 
 	/**
 	 * Destructor.
@@ -40,7 +41,9 @@ public:
 	 *
 	 * @return The size of this painter.
 	 */
-	const util::rect<double>& getSize() const { return _size; };
+	const util::rect<double>& getSize() const { return _size; }
+
+	const std::string& getName() const { return _name; }
 
 protected:
 
@@ -67,6 +70,8 @@ private:
 
 	// the size of this painter
 	util::rect<double> _size;
+
+	std::string _name;
 };
 
 } // namespace gui
