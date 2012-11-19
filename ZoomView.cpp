@@ -5,11 +5,11 @@ namespace gui {
 
 static logger::LogChannel zoomviewlog("zoomviewlog", "[ZoomView] ");
 
-ZoomView::ZoomView() :
-		_scale(1.0),
-		_shift(0.0, 0.0),
+ZoomView::ZoomView(bool autoscale) :
+		_zoomed(boost::make_shared<ZoomPainter>()),
 		_zoomStep(1.1),
-		_dragging(false) {
+		_dragging(false),
+		_autoscale(autoscale) {
 
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");
@@ -30,13 +30,50 @@ ZoomView::ZoomView() :
 	_zoomed.registerForwardCallback(&ZoomView::onMouseUp, this);
 	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
 	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
+
+	if (_autoscale) {
+
+		_zoomed->setAutoscale();
+		_zoomed.registerForwardCallback(&ZoomView::onResize, this);
+	}
+}
+
+ZoomView::ZoomView(const util::rect<double>& desiredSize) :
+		_zoomed(boost::make_shared<ZoomPainter>()),
+		_zoomStep(1.1),
+		_dragging(false),
+		_autoscale(true) {
+
+	registerInput(_content, "painter");
+	registerOutput(_zoomed, "painter");
+
+	_content.registerBackwardSlot(_keyDown);
+	_content.registerBackwardSlot(_keyUp);
+	_content.registerBackwardSlot(_mouseDown);
+	_content.registerBackwardSlot(_mouseUp);
+	_content.registerBackwardSlot(_mouseMove);
+	_content.registerBackwardCallback(&ZoomView::onInputSet, this);
+	_content.registerBackwardCallback(&ZoomView::onContentChanged, this);
+	_content.registerBackwardCallback(&ZoomView::onSizeChanged, this);
+
+	_zoomed.registerForwardSlot(_contentChanged);
+	_zoomed.registerForwardSlot(_sizeChanged);
+	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
+	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseUp, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
+
+	_zoomed->setAutoscale();
+	_zoomed->setDesiredSize(desiredSize);
 }
 
 void
 ZoomView::updateOutputs() {
 
-	_zoomed->setScale(_scale);
-	_zoomed->setShift(_shift);
+	LOG_ALL(zoomviewlog) << "\"updating\" output..." << std::endl;
+
+	_zoomed->updateScaleAndShift();
 }
 
 void
@@ -64,9 +101,19 @@ ZoomView::onContentChanged(const ContentChanged& signal) {
 void
 ZoomView::onSizeChanged(const SizeChanged& signal) {
 
-	_zoomed->updateSize();
-
 	_sizeChanged(SizeChanged(_zoomed->getSize()));
+
+	setDirty(_zoomed);
+}
+
+void
+ZoomView::onResize(const Resize& signal) {
+
+	LOG_ALL(zoomviewlog) << "got a resize signal, change desired size to " << signal.getSize() << std::endl;
+
+	_zoomed->setDesiredSize(signal.getSize());
+
+	_sizeChanged(SizeChanged(signal.getSize()));
 
 	setDirty(_zoomed);
 }
@@ -87,8 +134,7 @@ ZoomView::onKeyDown(KeyDown& signal) {
 
 		LOG_ALL(zoomviewlog) << "resetting scale and shift" << std::endl;
 
-		_scale = 1.0;
-		_shift = util::point<double>(0.0, 0.0);
+		_zoomed->reset();
 
 		setDirty(_zoomed);
 
@@ -106,8 +152,7 @@ ZoomView::onMouseUp(const MouseUp& signal) {
 	LOG_ALL(zoomviewlog) << "a button was released" << std::endl;
 
 	MouseUp zoomedSignal = signal;
-	zoomedSignal.position /= _scale;
-	zoomedSignal.position -= _shift;
+	zoomedSignal.position = _zoomed->invert(zoomedSignal.position);
 
 	_mouseUp(zoomedSignal);
 }
@@ -118,8 +163,7 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 	LOG_ALL(zoomviewlog) << "a button was pressed" << std::endl;
 
 	MouseDown zoomedSignal = signal;
-	zoomedSignal.position /= _scale;
-	zoomedSignal.position -= _shift;
+	zoomedSignal.position = _zoomed->invert(zoomedSignal.position);
 
 	if (!(signal.modifiers & keys::ControlDown)) {
 
@@ -141,10 +185,6 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 		return;
 	}
 
-	// in the following, treat x and y zoom-corrected:
-	position.x /= _scale;
-	position.y /= _scale;
-
 	// if shift is pressed, increase zoom speed
 	double zoomStep = _zoomStep;
 	if (signal.modifiers & keys::ShiftDown)
@@ -155,12 +195,7 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 
 		LOG_ALL(zoomviewlog) << "it's the left wheel up" << std::endl;
 
-		_scale *= zoomStep;
-		_shift += position*(1.0/zoomStep - 1.0);
-
-		LOG_ALL(zoomviewlog) << "mouse wheel up, new zoom "
-							 << _scale << ", shift " << _shift
-							 << ", position was " << position << std::endl;
+		_zoomed->zoom(zoomStep, position);
 	}
 
 	// mouse wheel down
@@ -168,12 +203,7 @@ ZoomView::onMouseDown(const MouseDown& signal) {
 
 		LOG_ALL(zoomviewlog) << "it's the left wheel down" << std::endl;
 
-		_scale *= 1.0/zoomStep;
-		_shift += position*(zoomStep - 1.0);
-
-		LOG_ALL(zoomviewlog) << "mouse wheel down, new zoom "
-							 << _scale << ", shift " << _shift
-							 << ", position was " << position << std::endl;
+		_zoomed->zoom(1.0/zoomStep, position);
 	}
 
 	setDirty(_zoomed);
@@ -185,9 +215,7 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 	LOG_ALL(zoomviewlog) << "the mouse is moved" << std::endl;
 
 	MouseMove zoomedSignal = signal;
-	zoomedSignal.position /= _scale;
-	zoomedSignal.position -= _shift;
-
+	zoomedSignal.position = _zoomed->invert(zoomedSignal.position);
 
 	if (!(signal.modifiers & keys::ControlDown)) {
 
@@ -213,7 +241,7 @@ ZoomView::onMouseMove(const MouseMove& signal) {
 
 		util::point<double> moved = signal.position - _buttonDown;
 
-		_shift += moved*amp/_scale;
+		_zoomed->drag(moved*amp);
 
 		_buttonDown = signal.position;
 

@@ -51,7 +51,7 @@ public:
 	Resize(const util::rect<double>& toSize) :
 		_toSize(toSize) {}
 
-	const util::rect<double>& getSize() {
+	const util::rect<double>& getSize() const {
 
 		return _toSize;
 	}

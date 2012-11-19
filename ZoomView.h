@@ -13,7 +13,22 @@ class ZoomView : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	ZoomView();
+	/**
+	 * Default constructor.
+	 *
+	 * @param autoscale
+	 *             If set to true, this view will automatically scale the 
+	 *             content to fit the size this view was requested to have. For 
+	 *             that, a Resize signal has to be sent to this view.
+	 */
+	ZoomView(bool autoscale = false);
+
+	/**
+	 * Create a zoom view of a fixed size. The content will be scaled and 
+	 * shifted to fit into the desired size. Zooming and panning changes the 
+	 * area of the content that is fit into the desired size.
+	 */
+	ZoomView(const util::rect<double>& desiredSize);
 
 private:
 
@@ -24,6 +39,8 @@ private:
 	void onContentChanged(const ContentChanged& signal);
 
 	void onSizeChanged(const SizeChanged& signal);
+
+	void onResize(const Resize& signal);
 
 	void onKeyUp(const KeyUp& signal);
 
@@ -50,12 +67,6 @@ private:
 	signals::Slot<const ContentChanged>      _contentChanged;
 	signals::Slot<const SizeChanged>         _sizeChanged;
 
-	// the scale of the zoomed content
-	double _scale;
-
-	// the shift of the zoomed content
-	util::point<double> _shift;
-
 	// the speed of zooming
 	double _zoomStep;
 
@@ -64,6 +75,10 @@ private:
 
 	// indicate that we are in dragging mode
 	bool _dragging;
+
+	// automatically scale content to fit the desired size (which can be given 
+	// on construction or set via a resize signal)
+	bool _autoscale;
 };
 
 } // namespace gui

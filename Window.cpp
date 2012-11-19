@@ -91,9 +91,9 @@ Window::configureViewport() {
 
 	glMatrixMode(GL_MODELVIEW);
 
-	LOG_DEBUG(winlog) << "[" << getCaption() << "] set drawing area to "
-	                  << "(0, 0, " << _resolution.x << ", " << _resolution.y << ")"
-	                  << std::endl;
+	LOG_ALL(winlog) << "[" << getCaption() << "] set drawing area to "
+	                << "(0, 0, " << _resolution.x << ", " << _resolution.y << ")"
+	                << std::endl;
 
 	GL_ASSERT;
 }
@@ -119,9 +119,6 @@ Window::processResizeEvent(int width, int height) {
 		configureViewport();
 		createFrameBuffer();
 	}
-
-	// set the size of the view container
-	_resize(_region);
 }
 
 void
@@ -194,6 +191,9 @@ Window::createGlContext() {
 
 void
 Window::redraw() {
+
+	// prepare painters
+	_resize(_region);
 
 	// ensure that our context is active
 	OpenGl::Guard guard(this);

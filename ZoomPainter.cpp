@@ -1,48 +1,139 @@
+#include <util/Logger.h>
 #include <gui/OpenGl.h>
 #include "ZoomPainter.h"
 
 namespace gui {
+
+logger::LogChannel zoompainterlog("zoompainterlog", "[ZoomPainter] ");
+
+ZoomPainter::ZoomPainter() :
+	_userScale(1.0),
+	_userShift(0, 0),
+	_scale(1.0),
+	_shift(0, 0),
+	_autoscale(false),
+	_desiredSize(0, 0, 1, 1) {}
 
 void
 ZoomPainter::setContent(boost::shared_ptr<Painter> content) {
 
 	_content = content;
 
-	updateSize();
+	if (_autoscale)
+
+		// we rescale to the desired size
+		setSize(_desiredSize);
+	
+	else
+		// the reported size should be the size of the original content
+		setSize(_content->getSize());
+
+	updateScaleAndShift();
 }
 
 void
-ZoomPainter::setScale(double scale) {
+ZoomPainter::setUserScale(double scale) {
 
-	_scale = scale;
+	_userScale = scale;
+
+	updateScaleAndShift();
 }
 
 void
-ZoomPainter::setShift(const util::point<double>& shift) {
+ZoomPainter::setUserShift(const util::point<double>& shift) {
 
-	_shift = shift;
+	_userShift = shift;
+
+	updateScaleAndShift();
+}
+
+void
+ZoomPainter::reset() {
+
+	_userScale = 1.0;
+	_userShift = util::point<double>(0.0, 0.0);
+
+	updateScaleAndShift();
+}
+
+util::point<double>
+ZoomPainter::invert(const util::point<double>& point) {
+
+	util::point<double> inv = point;
+
+	inv -= _shift;
+	inv /= _scale;
+
+	return inv;
+}
+
+void
+ZoomPainter::zoom(double zoomChange, const util::point<double>& anchor) {
+
+	_userScale *= zoomChange;
+	_userShift  = anchor + (_userShift - anchor)*zoomChange;
+
+	updateScaleAndShift();
+}
+
+void
+ZoomPainter::drag(const util::point<double>& direction) {
+
+	_userShift += direction;
+
+	updateScaleAndShift();
 }
 
 void
 ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& resolution) {
 
+	LOG_ALL(zoompainterlog) << "drawing" << std::endl;
+
+	LOG_ALL(zoompainterlog) << "shift is " << _shift << ", scale is " << _scale << std::endl;
+
 	OpenGl::Guard guard;
 
 	glPushMatrix();
 
-	glScaled(_scale, _scale, 1.0);
 	glTranslated(_shift.x, _shift.y, 0.0);
+	glScaled(_scale, _scale, 1.0);
 
-	_content->draw(roi/_scale - _shift, resolution*_scale);
+	_content->draw((roi - _shift)/_scale, resolution*_scale);
 
 	glPopMatrix();
 }
 
 void
-ZoomPainter::updateSize() {
+ZoomPainter::updateScaleAndShift() {
 
-	// the reported size should be the size of the original content
-	setSize(_content->getSize());
+	double scale = 1.0;
+	util::point<double> shift(0, 0);
+
+	// first, apply autoscale transformation (if wanted)
+	if (_autoscale) {
+
+		const util::rect<double>& contentSize = _content->getSize();
+
+		// do we have to fit the width or height of the content?
+		bool fitHeight = (contentSize.width()/contentSize.height() < _desiredSize.width()/_desiredSize.height());
+
+		// get the scae to fit the width or height to the desired size
+		scale = (fitHeight ? _desiredSize.height()/contentSize.height() : _desiredSize.width()/contentSize.width());
+
+		// get the shift to center the content in the desired area relative to 
+		// desired upper left
+		util::point<double> centerShift =
+				(fitHeight ?
+				 util::point<double>(1, 0)*0.5*(_desiredSize.width()  - contentSize.width() *scale) :
+				 util::point<double>(0, 1)*0.5*(_desiredSize.height() - contentSize.height()*scale));
+
+		// get the final shift relative to content upper left
+		shift = (contentSize.upperLeft() - _desiredSize.upperLeft()) + centerShift;
+	}
+
+	// prepend user scale and shift transformation
+	_shift = _userScale*shift + _userShift;
+	_scale = _userScale*scale;
 }
 
 } // namespace gui
