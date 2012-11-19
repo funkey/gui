@@ -26,14 +26,16 @@ public:
 		a = i.end();
 
 		// has to provide its width and height
-		unsigned int width  = i.width();
-		unsigned int height = i.height();
+		width  = i.width();
+		height = i.height();
 	}
 
 private:
 
 	Impl i;
 	iterator a;
+	unsigned int width;
+	unsigned int height;
 };
 
 #endif // IS_IMAGE_H__

@@ -23,7 +23,7 @@ template <typename Pointer>
 struct init_ptr {
 
 	// default for smart pointers: do nothing
-	void operator()(Pointer& p) {}
+	void operator()(Pointer&) {}
 };
 
 template <typename Pointer>
@@ -413,7 +413,7 @@ ImagePainter<Image, Pointer>::reloadTexture() {
 
 template <typename Image, typename Pointer>
 void
-ImagePainter<Image, Pointer>::loadNormalized(const boost::true_type& arithmetic) {
+ImagePainter<Image, Pointer>::loadNormalized(const boost::true_type&) {
 
 	bool       valid = false;
 	value_type min = 0.0f;

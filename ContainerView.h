@@ -90,7 +90,7 @@ private:
 		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
-	void onPaintersCleared(const pipeline::InputsCleared& signal) {
+	void onPaintersCleared(const pipeline::InputsCleared&) {
 
 		LOG_ALL(containerviewlog) << _name << ": " << "painters cleared" << std::endl;
 
@@ -111,7 +111,7 @@ private:
 		_contentChanged(signal);
 	}
 
-	void onSizeChanged(const SizeChanged& signal) {
+	void onSizeChanged(const SizeChanged&) {
 
 		LOG_ALL(containerviewlog) << _name << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
 

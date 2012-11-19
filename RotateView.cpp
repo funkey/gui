@@ -8,10 +8,16 @@ namespace gui {
 static logger::LogChannel rotateviewlog("rotateviewlog", "[RotateView] ");
 
 RotateView::RotateView() :
+		_x(0.0),
+		_y(1.0),
+		_z(0.0),
+		_w(0.0),
 		_prevX(0.0),
 		_prevY(1.0),
 		_prevZ(0.0),
-		_prevW(0.0) {
+		_prevW(0.0),
+		_buttonDown(0, 0),
+		_dragging(false) {
 
 	registerInput(_content, "painter");
 	registerOutput(_rotated, "painter");
