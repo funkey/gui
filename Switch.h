@@ -15,7 +15,7 @@ class Switch : public pipeline::ProcessNode {
 
 public:
 
-	Switch(std::string name);
+	Switch(std::string name, bool value = false);
 
 private:
 

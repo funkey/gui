@@ -16,7 +16,7 @@ class SwitchImpl : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SwitchImpl();
+	SwitchImpl(bool value);
 
 private:
 

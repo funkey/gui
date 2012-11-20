@@ -7,9 +7,9 @@ LogChannel switchlog("switchlog", "");
 
 namespace gui {
 
-SwitchImpl::SwitchImpl() :
-	_value(false),
-	_painter(new SwitchPainter(false)),
+SwitchImpl::SwitchImpl(bool value) :
+	_value(value),
+	_painter(new SwitchPainter(value)),
 	_mouseOver(false) {
 
 	registerOutput(_value, "value");

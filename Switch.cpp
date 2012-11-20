@@ -4,9 +4,9 @@
 
 namespace gui {
 
-Switch::Switch(std::string name) :
+Switch::Switch(std::string name, bool value) :
 	_textView(boost::make_shared<TextView>(name + ":")),
-	_switchImpl(boost::make_shared<SwitchImpl>()),
+	_switchImpl(boost::make_shared<SwitchImpl>(value)),
 	_container(boost::make_shared<ContainerView<HorizontalPlacing> >()) {
 
 	// setup internal pipeline connections
