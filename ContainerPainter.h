@@ -67,6 +67,12 @@ public:
 	unsigned int size() { return _painterOffsets.size(); }
 
 	/**
+	 * Recomputes the size of this painter based on the containing painter's
+	 * sizes and offsets.
+	 */
+	void updateSize();
+
+	/**
 	 * Update the offsets of the containing painters all at once.
 	 */
 	void setOffsets(const std::vector<util::point<double> >& offsets);
@@ -77,12 +83,6 @@ public:
 	ContainerPainter& operator=(const ContainerPainter& other);
 
 private:
-
-	/**
-	 * Recomputes the size of this painter based on the containing painter's
-	 * sizes and offsets.
-	 */
-	void updateSize();
 
 	// the painters this container stores
 	painter_offsets _painterOffsets;

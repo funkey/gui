@@ -115,6 +115,7 @@ private:
 
 		LOG_ALL(containerviewlog) << _name << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
 
+		_container->updateSize();
 		setDirty(_container);
 
 		_sizeChanged(SizeChanged(_container->getSize()));
