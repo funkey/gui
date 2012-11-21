@@ -169,6 +169,9 @@ RotateView::onMouseMove(MouseMove& signal) {
 
 	LOG_ALL(rotateviewlog) << "the mouse is moved" << std::endl;
 
+	if (!signal.modifiers & buttons::LeftDown)
+		_rotated->setHighlight(_rotated->getSize().contains(signal.position));
+
 	MouseMove unrotatedSignal = signal;
 
 	unrotatedSignal.position = unrotatePosition(signal.position);

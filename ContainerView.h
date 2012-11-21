@@ -156,6 +156,10 @@ private:
 
 			offsetSignal.position -= _offsets[i];
 
+			// mouse down events are only forwarded to painters under the cursor
+			if (!_painters[i]->getSize().contains(offsetSignal.position))
+				continue;
+
 			_mouseDowns[i](offsetSignal);
 
 			if (offsetSignal.processed) {

@@ -6,6 +6,9 @@ namespace gui {
 
 logger::LogChannel rotatepainterlog("rotatepainterlog", "[RotatePainter] ");
 
+RotatePainter::RotatePainter() :
+	_highlight(false) {}
+
 void
 RotatePainter::setContent(boost::shared_ptr<Painter> content) {
 
@@ -36,6 +39,46 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	glRotated(_w, _x, _y, _z);
 	glTranslated(-_centerX, -_centerY, -_centerZ);
 
+	util::point<double> ul = _content->getSize().upperLeft();
+	util::point<double> lr = _content->getSize().lowerRight();
+
+	glColor4f((_highlight ? 0.88 : 0.1), 0.2, 0.05, 0.5);
+
+	// draw 2d frame around content
+	glCheck(glEnable(GL_BLEND));
+	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+	glLineWidth(2.0);
+	glEnable(GL_LINE_SMOOTH);
+
+	glBegin(GL_LINES);
+	glVertex2f(ul.x, ul.y);
+	glVertex2f(lr.x, ul.y);
+
+	glVertex2f(lr.x, ul.y);
+	glVertex2f(lr.x, lr.y);
+
+	glVertex2f(lr.x, lr.y);
+	glVertex2f(ul.x, lr.y);
+
+	glVertex2f(ul.x, lr.y);
+	glVertex2f(ul.x, ul.y);
+	glEnd();
+
+	// draw solid backside
+	glCheck(glEnable(GL_CULL_FACE));
+	glCheck(glEnable(GL_LIGHTING));
+	glCheck(glEnable(GL_LIGHT0));
+	glCheck(glEnable(GL_COLOR_MATERIAL));
+
+	glBegin(GL_QUADS);
+	glVertex2f(ul.x, ul.y);
+	glVertex2f(lr.x, ul.y);
+	glVertex2f(lr.x, lr.y);
+	glVertex2f(ul.x, lr.y);
+	glEnd();
+
+	// draw content
 	_content->draw(roi + util::point<double>(_centerX, _centerY), resolution);
 
 	glPopMatrix();
