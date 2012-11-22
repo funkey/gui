@@ -192,6 +192,9 @@ Window::createGlContext() {
 void
 Window::redraw() {
 
+	// They say OpenGl is thread safe. They are wrong.
+	boost::mutex::scoped_lock lock(OpenGl::getMutex());
+
 	// prepare painters
 	_resize(_region);
 
