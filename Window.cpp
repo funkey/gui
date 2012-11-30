@@ -119,6 +119,9 @@ Window::processResizeEvent(int width, int height) {
 		configureViewport();
 		createFrameBuffer();
 	}
+
+	// prepare painters
+	_resize(_region);
 }
 
 void
@@ -194,9 +197,6 @@ Window::redraw() {
 
 	// They say OpenGl is thread safe. They are wrong.
 	boost::mutex::scoped_lock lock(OpenGl::getMutex());
-
-	// prepare painters
-	_resize(_region);
 
 	// ensure that our context is active
 	OpenGl::Guard guard(this);
