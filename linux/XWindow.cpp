@@ -239,7 +239,6 @@ XWindow::processEvents() {
 						xcb_configure_notify_event_t* configureEvent = (xcb_configure_notify_event_t*)event;
 
 						processResizeEvent(configureEvent->width, configureEvent->height);
-						setDirty();
 					}
 
 					break;
