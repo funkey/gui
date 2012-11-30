@@ -66,6 +66,8 @@ TextPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
+	boost::unique_lock<boost::shared_mutex> lock(getMutex());
+
 	// only update texture if necessary
 	//if (resolution != _lastResolution || roi != _lastRoi [> TODO: make this more efficient <]) {
 
