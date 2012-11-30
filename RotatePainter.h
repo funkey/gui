@@ -21,6 +21,8 @@ public:
 
 	void setHighlight(bool highlight) { _highlight = highlight; }
 
+	bool isHighlighted() { return _highlight; }
+
 private:
 
 	// the rotation parameters
