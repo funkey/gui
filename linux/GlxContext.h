@@ -67,23 +67,26 @@ private:
 	 */
 	void enableVerticalSync(bool enable);
 
-	// the X11 display
-	Display*   _display;
+	// the window we are attached to (could have been created by us)
+	Window* _window;
 
-	// the X11 window this context renders to
-	::Window   _window;
+	// did we create the window?
+	bool _ownWindow;
 
-	// have we created the window?
-	bool       _ownWindow;
+	// the glx window
+	GLXWindow _glxWindow;
+
+	// the glx drawable (which is the window)
+	GLXDrawable _glxDrawable;
 
 	// the true OpenGl context
-	GLXContext _context;
+	GLXContext _glxContext;
 
 	// the settings according to this context
 	ContextSettings _settings;
 
 	// indicates that this context is currently active
-	bool       _active;
+	bool _active;
 };
 
 } // namespace gui

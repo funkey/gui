@@ -2,9 +2,10 @@
 
 #include <X11/extensions/Xrandr.h>
 
-#include <gui/linux/XWindow.h>
 #include <gui/Modifiers.h>
+#include <gui/linux/XWindow.h>
 #include <util/Logger.h>
+#include <util/exceptions.h>
 
 using std::endl;
 using std::abs;
@@ -16,160 +17,171 @@ namespace gui {
 
 XWindow::XWindow(string caption, const WindowMode& mode) :
 	WindowBase(caption),
-	_closed(false),
-	_fullscreen(false),
-	_previousMode(-1) {
+	_visible(false),
+	_closed(false) {
 
-	// since this library was designed to be multithreaded, we feel it is safe
-	// to enable X multithreading here -- even if the user does not need it
-	if (!XInitThreads())
-		LOG_ERROR(xlog) << "[XWindow] set up X multithreading was not successful"
-		                << endl;
+	//// since this library was designed to be multithreaded, we feel it is safe
+	//// to enable X multithreading here -- even if the user does not need it
+	//if (!XInitThreads())
+		//LOG_ERROR(xlog) << "[XWindow] set up X multithreading was not successful"
+						//<< endl;
 
-	LOG_ALL(xlog) << "[XWindow] setting up X server connection" << endl;
+	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] setting up X server connection" << endl;
+
+	// open X11 connection
 
 	_display = XOpenDisplay(0);
-	_screen  = DefaultScreen(_display);
 
 	if (_display == 0)
-		throw "[XWindow] Unable to open display";
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] Unable to open display") << STACK_TRACE);
 
-	// setup fullscreen -- that might change mode
-	if (mode.fullscreen)
-		setupFullscreen(mode);
+	// get the default screen
 
-	XSetWindowAttributes attributes;
+	_screen = DefaultScreen(_display);
 
-	// register for events
-	attributes.event_mask =
-			FocusChangeMask | ButtonPressMask | ButtonReleaseMask |
-			ButtonMotionMask | PointerMotionMask | KeyPressMask |
-			KeyReleaseMask | StructureNotifyMask | EnterWindowMask |
-			LeaveWindowMask | ExposureMask;
+	// open xcb connection
 
-	// don't interfere with window manager in fullscreen mode
-	attributes.override_redirect = _fullscreen;
+	_xcbConnection = XGetXCBConnection(_display);
 
-	_window = XCreateWindow(
-			_display,
-			RootWindow(_display, _screen),
+	if (!_xcbConnection) {
+
+		XCloseDisplay(_display);
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] Unable to establish connection to xcb") << STACK_TRACE);
+	}
+
+	// get the event queue ownership
+
+	XSetEventQueueOwner(_display, XCBOwnsEventQueue);
+
+	// find xcb screen
+
+	_xcbScreen = 0;
+
+	xcb_screen_iterator_t screen_iter = xcb_setup_roots_iterator(xcb_get_setup(_xcbConnection));
+
+	for(int screen_num = _screen; screen_iter.rem && screen_num > 0; --screen_num, xcb_screen_next(&screen_iter));
+
+	_xcbScreen = screen_iter.data;
+
+	// query the framebuffer configurations
+
+	GLXFBConfig* fbConfigs = 0;
+	int numFbConfigs = 0;
+
+	fbConfigs = glXGetFBConfigs(_display, _screen, &numFbConfigs);
+
+	if (!fbConfigs || numFbConfigs == 0) {
+
+		XCloseDisplay(_display);
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to query frame-buffer configurations") << STACK_TRACE);
+	}
+
+	// select first frame-buffer configuration and visual id
+
+	int visualId = 0;
+
+	_fbConfig = fbConfigs[0];
+	glXGetFBConfigAttrib(_display, _fbConfig, GLX_VISUAL_ID , &visualId);
+
+	// create xcb colormap
+
+	xcb_colormap_t colormap = xcb_generate_id(_xcbConnection);
+
+	xcb_create_colormap(
+			_xcbConnection,
+			XCB_COLORMAP_ALLOC_NONE,
+			colormap,
+			_xcbScreen->root,
+			visualId);
+
+	// create xcb window
+
+	_xcbWindow = xcb_generate_id(_xcbConnection);
+
+	uint32_t eventmask =
+			XCB_EVENT_MASK_EXPOSURE |
+			XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+			XCB_EVENT_MASK_VISIBILITY_CHANGE |
+			XCB_EVENT_MASK_KEY_PRESS |
+			XCB_EVENT_MASK_BUTTON_PRESS |
+			XCB_EVENT_MASK_BUTTON_RELEASE |
+			XCB_EVENT_MASK_POINTER_MOTION;
+	uint32_t valuelist[] = { eventmask, colormap, 0 };
+	uint32_t valuemask = XCB_CW_EVENT_MASK | XCB_CW_COLORMAP;
+
+	xcb_create_window(
+			_xcbConnection,
+			XCB_COPY_FROM_PARENT,
+			_xcbWindow,
+			_xcbScreen->root,
 			mode.position.x, mode.position.y,
 			mode.size.x, mode.size.y,
 			0,
-			DefaultDepth(_display, _screen),
-			InputOutput,
-			DefaultVisual(_display, _screen),
-			CWEventMask | CWOverrideRedirect,
-			&attributes);
+			XCB_WINDOW_CLASS_INPUT_OUTPUT,
+			visualId,
+			valuemask,
+			valuelist);
 
-	XStoreName(_display, _window, caption.c_str());
+	if (!_xcbWindow) {
 
-	LOG_ALL(xlog) << "[XWindow] registering for delete events" << endl;
+		xcb_destroy_window(_xcbConnection, _xcbWindow);
 
-	_deleteWindow = XInternAtom(_display, "WM_DELETE_WINDOW", 0);
-	XSetWMProtocols(_display, _window, &_deleteWindow, 1);
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to create xcb window") << STACK_TRACE);
+	}
 
-	LOG_ALL(xlog) << "[XWindow] creating input context" << endl;
+	// register client events for close notifications
 
-	_inputMethod = XOpenIM(_display, 0, 0, 0);
+	xcb_intern_atom_cookie_t protocolsCookie = xcb_intern_atom(_xcbConnection, 1 /* if atom exists */, 12 /* size of string */, "WM_PROTOCOLS");
+	xcb_intern_atom_reply_t* protocolsReply  = xcb_intern_atom_reply(_xcbConnection, protocolsCookie, 0);
 
+	if (!protocolsReply)
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("couldn't access WM_PROTOCOLS") << STACK_TRACE);
 
-	if (_inputMethod) {
+	xcb_intern_atom_cookie_t deleteCookie = xcb_intern_atom(_xcbConnection, 0 /* if atom exists */, 16 /* size of string */, "WM_DELETE_WINDOW");
+	_deleteReply                          = xcb_intern_atom_reply(_xcbConnection, deleteCookie, 0);
 
-		_inputContext = XCreateIC(
-				_inputMethod,
-				XNClientWindow, _window,
-				XNFocusWindow, _window,
-				XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-				NULL);
+	if (!_deleteReply)
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("couldn't access WM_DELETE_WINDOW") << STACK_TRACE);
 
-	} else
-		LOG_ERROR(xlog) << "[XWindow] could not create input context" << endl;
+	xcb_change_property(
+			_xcbConnection,
+			XCB_PROP_MODE_REPLACE,
+			_xcbWindow,
+			(*protocolsReply).atom, /* the property to change */
+			XCB_ATOM_ATOM,          /* type of the property */
+			32,                     /* data element format */
+			1,                      /* number of elements in data */
+			&(*_deleteReply).atom); /* data */
 
-	// now we are ready to show the window
-	LOG_ALL(xlog) << "[XWindow] mapping window" << endl;
+	free(protocolsReply);
 
-	XMapWindow(_display, _window);
-	XFlush(_display);
+	// map window
 
-	LOG_ALL(xlog) << "[XWindow] initialized" << endl;
+	if (mode.mapped)
+		xcb_map_window(_xcbConnection, _xcbWindow); 
+
+	xcb_flush(_xcbConnection);
+
+	LOG_DEBUG(xlog) << "[XWindow] [" << getCaption() << "] initialized" << endl;
 }
 
 XWindow::~XWindow() {
 
+	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] destructing" << endl;
+
+	// clsoe the window (if this didn't happen before already)
+
 	close();
-}
 
-void
-XWindow::setupFullscreen(const WindowMode& mode) {
+	// free the atom reply for delete events
 
-	int v;
-	if (!XQueryExtension(_display, "RANDR", &v, &v, &v)) {
+	free(_deleteReply);
 
-		LOG_ERROR(xlog) << "[XWindow] no xrandr extension found -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
+	// close X11 connection
 
-	XRRScreenConfiguration* config =
-			XRRGetScreenInfo(
-					_display,
-					RootWindow(_display, _screen));
+	XCloseDisplay(_display);
 
-	if (!config) {
-
-		LOG_ERROR(xlog) << "[XWindow] failed to get xrandr screen configuration -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
-
-	Rotation rotation;
-	_previousMode = XRRConfigCurrentConfiguration(config, &rotation);
-
-	// get all possible resolutions
-	int numResolutions;
-	XRRScreenSize* resolutions = XRRConfigSizes(config, &numResolutions);
-
-	if (!resolutions || numResolutions == 0) {
-
-		LOG_ERROR(xlog) << "[XWindow] failed to get possible resolutions -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
-
-	// find the closes resolution to the desired one
-	int bestResolution = -1;
-	int minDifference  = 0;
-	for (int i = 0; i < numResolutions; i++) {
-
-		int width  = resolutions[i].width;
-		int height = resolutions[i].height;
-
-		int difference =
-				abs(width  - mode.size.x) +
-				abs(height - mode.size.y);
-
-		if (difference < minDifference || bestResolution == -1) {
-
-			bestResolution = i;
-			minDifference  = difference;
-
-			if (minDifference == 0)
-				break;
-		}
-	}
-
-	// switch to closest fullscreen resolution
-	XRRSetScreenConfig(
-			_display,
-			config,
-			RootWindow(_display, _screen),
-			bestResolution,
-			rotation, CurrentTime);
-
-	XRRFreeScreenConfigInfo(config);
-
-	_fullscreen = true;
+	LOG_DEBUG(xlog) << "[XWindow] [" << getCaption() << "] destructed" << endl;
 }
 
 void
@@ -178,150 +190,244 @@ XWindow::processEvents() {
 	if (closed())
 		return;
 
-	XEvent event;
+	LOG_DEBUG(xlog) << "[XWindow] [" << getCaption() << "] entering event loop" << endl;
 
-	int numEvents = XPending(_display);
+	while (!closed()) {
 
-	for (int i = 0; i < numEvents; i++) {
+		// poll for events
 
-		Modifiers       modifiers;
-		keys::Key       key;
-		buttons::Button button;
+		xcb_generic_event_t *event;
 
-		XNextEvent(_display, &event);
+		while (event = xcb_poll_for_event(_xcbConnection)) {
 
-		switch (event.type) {
+			LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] got an event" << endl;
 
-			case ConfigureNotify:
-				// resize
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a configure notification" << endl;
-				processResizeEvent(event.xconfigure.width, event.xconfigure.height);
-				setDirty();
-				break;
+			Modifiers       modifiers;
+			keys::Key       key;
+			buttons::Button button;
 
-			case Expose:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received an expose notification" << endl;
-				setDirty();
-				break;
+			switch(event->response_type & ~0x80) {
 
-			case ClientMessage:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a client message" << endl;
-				if (event.xclient.data.l[0] == _deleteWindow) {
+				case XCB_MAP_NOTIFY:
 
-					processCloseEvent();
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a map notification" << endl;
 
-					// there is no need to process further events
-					return;
-				}
+						_visible = true;
+					}
 
-				break;
+					break;
 
-			case DestroyNotify:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a destroy notification" << endl;
+				case XCB_UNMAP_NOTIFY:
 
-				processCloseEvent();
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received an unmap notification" << endl;
 
-				// there is no need to process further events
-				return;
+						_visible = false;
+					}
 
-			case KeyPress:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a key press notification" << endl;
+					break;
 
-				key       = keycodeToKey(event.xkey.keycode);
-				modifiers = stateToModifiers(event.xkey.state);
+				case XCB_CONFIGURE_NOTIFY:
 
-				processKeyDownEvent(key, modifiers);
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a configure notification" << endl;
 
-				break;
+						xcb_configure_notify_event_t* configureEvent = (xcb_configure_notify_event_t*)event;
 
-			case KeyRelease:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a key release notification" << endl;
+						processResizeEvent(configureEvent->width, configureEvent->height);
+						setDirty();
+					}
 
-				key       = keycodeToKey(event.xkey.keycode);
-				modifiers = stateToModifiers(event.xkey.state);
+					break;
 
-				processKeyUpEvent(key, modifiers);
+				case XCB_EXPOSE:
 
-				break;
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received an expose notification" << endl;
 
-			case ButtonPress:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a button press notification" << endl;
+						setDirty();
+					}
 
-				button    = buttonToButton(event.xbutton.button);
-				modifiers = stateToModifiers(event.xbutton.state);
+					break;
 
-				processButtonDownEvent(
-						button,
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
+				case XCB_VISIBILITY_NOTIFY:
 
-				break;
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a visibility notification" << endl;
 
-			case ButtonRelease:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a button release notification" << endl;
+						xcb_visibility_notify_event_t* visibilityEvent = (xcb_visibility_notify_event_t*)event;
 
-				button    = buttonToButton(event.xbutton.button);
-				modifiers = stateToModifiers(event.xbutton.state);
+						switch (visibilityEvent->state) {
 
-				processButtonUpEvent(
-						button,
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
+							case  XCB_VISIBILITY_UNOBSCURED:
 
-				break;
+								LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+											  << "I am entirely visible" << endl;
 
-			case MotionNotify:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a mouse motion notification" << endl;
+								_visible = true;
 
-				modifiers = stateToModifiers(event.xbutton.state);
+								break;
 
-				processMouseMoveEvent(
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
+							case XCB_VISIBILITY_PARTIALLY_OBSCURED:
 
-				break;
+								LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+											  << "I am partially visible" << endl;
 
-			case EnterNotify:
-				break;
+								_visible = true;
 
-			case LeaveNotify:
-				break;
+								break;
 
-			case FocusIn:
-				break;
+							case XCB_VISIBILITY_FULLY_OBSCURED:
 
-			case FocusOut:
-				break;
+								LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+											  << "I am not visible" << endl;
 
-			case UnmapNotify:
-				break;
+								_visible = false;
 
-			case MapNotify:
-				break;
+								break;
 
-			default:
-				LOG_ERROR(xlog) << "[XWindow] window "
-				                << " received unknown event notification: "
-				                << event.type << endl;
-				break;
+							default:
+
+								LOG_ERROR(xlog) << "[XWindow] [" << getCaption() << "] "
+												<< "unknown visibility type " << (unsigned int)visibilityEvent->state << endl;
+						}
+					}
+
+					break;
+
+				case XCB_CLIENT_MESSAGE:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a client message" << endl;
+
+						xcb_client_message_event_t* clientEvent = (xcb_client_message_event_t*)event;
+
+						if (clientEvent->data.data32[0] == _deleteReply->atom) {
+
+							LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+										  << "client requested window deletion" << endl;
+
+							processCloseEvent();
+						}
+					}
+
+					break;
+
+				case XCB_KEY_PRESS:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a key press notification" << endl;
+
+						xcb_key_press_event_t* pressEvent = (xcb_key_press_event_t*)event;
+
+						key       = keycodeToKey(pressEvent->detail);
+						modifiers = stateToModifiers(pressEvent->state);
+
+						processKeyDownEvent(key, modifiers);
+					}
+
+					break;
+
+				case KeyRelease:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << "received a key release notification" << endl;
+
+						xcb_key_release_event_t* releaseEvent = (xcb_key_release_event_t*)event;
+
+						key       = keycodeToKey(releaseEvent->detail);
+						modifiers = stateToModifiers(releaseEvent->state);
+
+						processKeyUpEvent(key, modifiers);
+					}
+
+					break;
+
+				case XCB_BUTTON_PRESS:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << " received a button press notification" << endl;
+
+						xcb_button_press_event_t* pressEvent = (xcb_button_press_event_t*)event;
+
+						button    = buttonToButton(pressEvent->detail);
+						modifiers = stateToModifiers(pressEvent->state);
+
+						processButtonDownEvent(
+								button,
+								point<double>(pressEvent->event_x, pressEvent->event_y),
+								modifiers);
+					}
+
+					break;
+
+				case XCB_BUTTON_RELEASE:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << " received a button release notification" << endl;
+
+						xcb_button_release_event_t* releaseEvent = (xcb_button_release_event_t*)event;
+
+						button    = buttonToButton(releaseEvent->detail);
+						modifiers = stateToModifiers(releaseEvent->state);
+
+						processButtonUpEvent(
+								button,
+								point<double>(releaseEvent->event_x, releaseEvent->event_y),
+								modifiers);
+					}
+
+					break;
+
+				case XCB_MOTION_NOTIFY:
+
+					{
+						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
+									  << " received a mouse motion notification" << endl;
+
+						xcb_motion_notify_event_t* motionEvent = (xcb_motion_notify_event_t*)event;
+
+						modifiers = stateToModifiers(motionEvent->state);
+
+						processMouseMoveEvent(
+								point<double>(motionEvent->event_x, motionEvent->event_y),
+								modifiers);
+					}
+
+					break;
+
+				default:
+
+					LOG_ERROR(xlog) << "[XWindow] [" << getCaption() << "] "
+									<< "received unknown event notification: "
+									<< (unsigned int)event->response_type << endl;
+					break;
+			}
+
+			free(event);
+
+		} // polling for events
+
+		// redraw only if needed
+		if (isDirty() && !closed() && _visible) {
+
+			LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] redraw requested" << endl;
+
+			setDirty(false);
+
+			redraw();
 		}
-	}
-
-	// redraw only if needed
-	if (isDirty() && !closed()) {
-
-		setDirty(false);
-
-		redraw();
 	}
 }
 
@@ -333,66 +439,9 @@ XWindow::close() {
 
 	_closed = true;
 
-	// just if we changed it
-	restoreVideoMode();
+	// destroy the window
 
-	// destroy input context
-	if (_inputContext) {
-
-		XDestroyIC(_inputContext);
-		_inputContext = 0;
-	}
-
-	// destroy window
-	if (_window) {
-
-		XDestroyWindow(_display, _window);
-		XFlush(_display);
-		_window = 0;
-	}
-
-	// close input method
-	if (_inputMethod) {
-
-		XCloseIM(_inputMethod);
-		_inputMethod = 0;
-	}
-
-	// close X11 connection
-	XCloseDisplay(_display);
-	_display = 0;
-}
-
-void
-XWindow::restoreVideoMode() {
-
-	if (!_fullscreen)
-		return;
-
-	XRRScreenConfiguration* config =
-			XRRGetScreenInfo(
-					_display,
-					RootWindow(_display, _screen));
-
-	if (config) {
-
-		Rotation rotation;
-		XRRConfigCurrentConfiguration(config, &rotation);
-
-		XRRSetScreenConfig(
-				_display,
-				config,
-				RootWindow(_display, _screen),
-				_previousMode,
-				rotation,
-				CurrentTime);
-
-		XRRFreeScreenConfigInfo(config);
-
-	} else {
-
-		LOG_ERROR(xlog) << "[XWindow] that's odd: can't reset video mode..." << endl;
-	}
+	xcb_destroy_window(_xcbConnection, _xcbWindow);
 }
 
 bool
@@ -494,16 +543,22 @@ XWindow::stateToModifiers(unsigned int state) {
 
 	Modifiers modifiers = NoModifier;
 
-	if (state & ControlMask)
+	if (state & XCB_MOD_MASK_CONTROL)
 		modifiers = static_cast<Modifiers>(modifiers | keys::ControlDown);
 
-	if (state & Button1Mask)
+	if (state & XCB_MOD_MASK_SHIFT)
+		modifiers = static_cast<Modifiers>(modifiers | keys::ShiftDown);
+
+	if (state & XCB_MOD_MASK_1)
+		modifiers = static_cast<Modifiers>(modifiers | keys::AltDown);
+
+	if (state & XCB_BUTTON_MASK_1)
 		modifiers = static_cast<Modifiers>(modifiers | buttons::LeftDown);
 
-	if (state & Button2Mask)
+	if (state & XCB_BUTTON_MASK_2)
 		modifiers = static_cast<Modifiers>(modifiers | buttons::MiddleDown);
 
-	if (state & Button3Mask)
+	if (state & XCB_BUTTON_MASK_3)
 		modifiers = static_cast<Modifiers>(modifiers | buttons::RightDown);
 
 	// TODO: add more modifiers
@@ -512,9 +567,9 @@ XWindow::stateToModifiers(unsigned int state) {
 }
 
 buttons::Button
-XWindow::buttonToButton(unsigned int xbutton) {
+XWindow::buttonToButton(const xcb_button_t& button) {
 
-	switch (xbutton) {
+	switch (button) {
 
 		case 1:
 			return buttons::Left;

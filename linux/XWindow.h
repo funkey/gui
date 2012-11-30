@@ -4,6 +4,9 @@
 #include <string>
 
 #include <X11/Xlib.h>
+#include <X11/Xlib-xcb.h>
+#include <xcb/xcb.h>
+#include <GL/glx.h>
 
 #include <gui/WindowBase.h>
 #include <gui/WindowMode.h>
@@ -52,27 +55,22 @@ public:
 	void processEvents();
 
 	/**
-	 * Provides access to the X11 display to create an OpenGl context.
+	 * Process access to the X11 display to create and manage an OpenGl context.
 	 */
-	Display* getDisplay() { return _display; };
+	Display* getDisplay() { return _display; }
 
 	/**
-	 * Provides access to the X11 window to create an OpenGl context.
+	 * Provides access to the xcb window to create an OpenGl context.
 	 */
-	::Window getX11Window() { return _window; };
+	xcb_window_t* getXcbWindow() { return &_xcbWindow; }
+
+	/**
+	 * Provides access to the frame-buffer configuration of this window to 
+	 * create an OpenGl context.
+	 */
+	GLXFBConfig* getFbConfig() { return &_fbConfig; }
 
 private:
-
-	/**
-	 * Finds the closes fullscreen resolution to the one given in mode and
-	 * switches to it.
-	 */
-	void setupFullscreen(const WindowMode& mode);
-
-	/**
-	 * Restore the video mode that we had before we changed it.
-	 */
-	void restoreVideoMode();
 
 	/**
 	 * Converts an X keycode to a Key.
@@ -87,34 +85,34 @@ private:
 	/**
 	 * Converts an X button to a Button.
 	 */
-	buttons::Button buttonToButton(unsigned int xbutton);
+	buttons::Button buttonToButton(const xcb_button_t& xbutton);
 
 	// the X11 display
 	Display* _display;
 
 	// the X11 screen
-	int      _screen;
+	int _screen;
 
-	// the X11 window
-	::Window _window;
+	// the xcb connection
+	xcb_connection_t* _xcbConnection;
 
-	// the X11 atom for delete window events
-	Atom     _deleteWindow;
+	// the xcb screen
+	xcb_screen_t* _xcbScreen;
 
-	// the X11 input method
-	XIM      _inputMethod;
+	// the glx frame-buffer configuration for this window
+	GLXFBConfig _fbConfig;
 
-	// the X11 input context
-	XIC      _inputContext;
+	// the xcb window
+	xcb_window_t _xcbWindow;
+
+	// atom for client delete events
+	xcb_intern_atom_reply_t* _deleteReply;
+
+	// is visible
+	bool _visible;
 
 	// was closed
-	bool     _closed;
-
-	// is this window running in fullscreen?
-	bool     _fullscreen;
-
-	// the video mode before the swith to fullscreen
-	int      _previousMode;
+	bool _closed;
 };
 
 } // namespace gui
