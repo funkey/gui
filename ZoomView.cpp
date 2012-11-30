@@ -111,11 +111,17 @@ ZoomView::onResize(const Resize& signal) {
 
 	LOG_ALL(zoomviewlog) << "got a resize signal, change desired size to " << signal.getSize() << std::endl;
 
+	util::rect<double> oldSize = _zoomed->getSize();
+
 	_zoomed->setDesiredSize(signal.getSize());
 
-	_sizeChanged(SizeChanged(signal.getSize()));
+	util::rect<double> newSize = _zoomed->getSize();
 
-	setDirty(_zoomed);
+	if (oldSize != newSize) {
+
+		_sizeChanged(newSize);
+		setDirty(_zoomed);
+	}
 }
 
 void
