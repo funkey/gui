@@ -198,12 +198,12 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 
 	LOG_ALL(textpainterlog) << "[redrawText] relevant part is " << cairoRoi << "[cu]" << std::endl;
 
-	if (cairoRoi.width() <= 0 || cairoRoi.height() <= 0)
-		return;
-
 	// The target size. [cu]
 	_cairoWidth  = (int)round(cairoRoi.width());
 	_cairoHeight = (int)round(cairoRoi.height());
+
+	if (_cairoWidth <= 0 || _cairoHeight <= 0)
+		return;
 
 	LOG_ALL(textpainterlog) << "[redrawText] rounded, this is " << _cairoWidth << "x"
 	                     << _cairoHeight << " pixels" << std::endl;
@@ -213,7 +213,7 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 	// Next, we prepare the cairo surface for the text.
 	if (!prepareBuffer()) {
 
-		LOG_DEBUG(textpainterlog) << "[redrawText] failed to create buffer" << std::endl;
+		LOG_ALL(textpainterlog) << "[redrawText] failed to create buffer" << std::endl;
 		return;
 	}
 
