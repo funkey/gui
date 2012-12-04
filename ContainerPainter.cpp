@@ -134,6 +134,10 @@ ContainerPainter::updateSize() {
 		const util::rect<double>&  painterSize = i->first->getSize();
 		const util::point<double>& offset      = i->second;
 
+		// don't consider empty painters
+		if (painterSize.area() == 0)
+			continue;
+
 		size.maxX  = std::max(size.maxX, (painterSize + offset).maxX);
 		size.minX  = std::min(size.minX, (painterSize + offset).minX);
 		size.maxY  = std::max(size.maxY, (painterSize + offset).maxY);

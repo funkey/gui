@@ -193,7 +193,7 @@ private:
 
 		LOG_ALL(containerviewlog) << _name << ": " << "updating offsets of painters:" << std::endl;
 		for (unsigned int i = 0; i < _painters.size(); i++)
-			LOG_ALL(containerviewlog) << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
+			LOG_ALL(containerviewlog) << _name << ": " << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
 
 		_offsets = PlacingStrategy::getOffsets(_painters.begin(), _painters.end());
 	}
