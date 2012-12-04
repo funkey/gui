@@ -129,6 +129,10 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to create xcb window") << STACK_TRACE);
 	}
 
+	// set window name
+
+	xcb_change_property(_xcbConnection, XCB_PROP_MODE_REPLACE, _xcbWindow, XCB_ATOM_WM_NAME, XCB_ATOM_STRING, 8, caption.length(), caption.c_str());
+
 	// register client events for close notifications
 
 	xcb_intern_atom_cookie_t protocolsCookie = xcb_intern_atom(_xcbConnection, 1 /* if atom exists */, 12 /* size of string */, "WM_PROTOCOLS");
