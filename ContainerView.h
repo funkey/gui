@@ -50,11 +50,6 @@ public:
 		_container.registerForwardSlot(_sizeChanged);
 	}
 
-	~ContainerView() {
-
-		LOG_DEBUG(containerviewlog) << _name << ": " << "destructed" << std::endl;
-	}
-
 private:
 
 	void updateOutputs() {
