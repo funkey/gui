@@ -34,7 +34,7 @@ public:
 	 * Set the desired size of this painter. Has an effect only if 
 	 * setAutoscale() has been set to true.
 	 */
-	void setDesiredSize(const util::rect<double>& desiredSize) { _desiredSize = desiredSize; }
+	void setDesiredSize(const util::rect<double>& desiredSize) { _desiredSize = desiredSize; updateScaleAndShift(); }
 
 	/**
 	 * Zoom onto the given point. The current scale will be multiplied by 
@@ -92,6 +92,11 @@ private:
 	// the scale and shift of this painter as requested by the user
 	double _userScale;
 	util::point<double> _userShift;
+
+	// the scale and shift of this painter to fit the content to the desired 
+	// size
+	double _autoScale;
+	util::point<double> _autoShift;
 
 	// the effective scale and shift, taking into account possible autoscaling
 	double _scale;

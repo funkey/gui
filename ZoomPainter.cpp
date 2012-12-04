@@ -9,6 +9,8 @@ logger::LogChannel zoompainterlog("zoompainterlog", "[ZoomPainter] ");
 ZoomPainter::ZoomPainter() :
 	_userScale(1.0),
 	_userShift(0, 0),
+	_autoScale(1.0),
+	_autoShift(0, 0),
 	_scale(1.0),
 	_shift(0, 0),
 	_autoscale(false),
@@ -70,8 +72,10 @@ ZoomPainter::invert(const util::point<double>& point) {
 void
 ZoomPainter::zoom(double zoomChange, const util::point<double>& anchor) {
 
+	LOG_ALL(zoompainterlog) << "changing user zoom by " << zoomChange << " keeping " << anchor << " where it is" << std::endl;
+
 	_userScale *= zoomChange;
-	_userShift  = anchor + (_userShift - anchor)*zoomChange;
+	_userShift  = (anchor - zoomChange*(anchor - (_autoScale*_userShift + _autoShift)) - _autoShift)/_autoScale;
 
 	updateScaleAndShift();
 }
@@ -79,7 +83,7 @@ ZoomPainter::zoom(double zoomChange, const util::point<double>& anchor) {
 void
 ZoomPainter::drag(const util::point<double>& direction) {
 
-	_userShift += direction;
+	_userShift += direction/_autoScale;
 
 	updateScaleAndShift();
 }
@@ -106,8 +110,8 @@ ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& reso
 void
 ZoomPainter::updateScaleAndShift() {
 
-	double scale = 1.0;
-	util::point<double> shift(0, 0);
+	_autoScale = 1.0;
+	_autoShift = util::point<double>(0, 0);
 
 	// first, apply autoscale transformation (if wanted)
 	if (_autoscale) {
@@ -117,23 +121,23 @@ ZoomPainter::updateScaleAndShift() {
 		// do we have to fit the width or height of the content?
 		bool fitHeight = (contentSize.width()/contentSize.height() < _desiredSize.width()/_desiredSize.height());
 
-		// get the scae to fit the width or height to the desired size
-		scale = (fitHeight ? _desiredSize.height()/contentSize.height() : _desiredSize.width()/contentSize.width());
+		// get the scale to fit the width or height to the desired size
+		_autoScale = (fitHeight ? _desiredSize.height()/contentSize.height() : _desiredSize.width()/contentSize.width());
 
 		// get the shift to center the content in the desired area relative to 
 		// desired upper left
 		util::point<double> centerShift =
 				(fitHeight ?
-				 util::point<double>(1, 0)*0.5*(_desiredSize.width()  - contentSize.width() *scale) :
-				 util::point<double>(0, 1)*0.5*(_desiredSize.height() - contentSize.height()*scale));
+				 util::point<double>(1, 0)*0.5*(_desiredSize.width()  - contentSize.width() *_autoScale) :
+				 util::point<double>(0, 1)*0.5*(_desiredSize.height() - contentSize.height()*_autoScale));
 
 		// get the final shift relative to content upper left
-		shift = (contentSize.upperLeft() - _desiredSize.upperLeft()) + centerShift;
+		_autoShift = (contentSize.upperLeft() - _desiredSize.upperLeft()) + centerShift;
 	}
 
-	// prepend user scale and shift transformation
-	_shift = _userScale*shift + _userShift;
-	_scale = _userScale*scale;
+	// append user scale and shift transformation
+	_shift = _autoScale*_userShift + _autoShift;
+	_scale = _autoScale*_userScale;
 }
 
 } // namespace gui
