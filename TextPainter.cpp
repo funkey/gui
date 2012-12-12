@@ -45,6 +45,8 @@ TextPainter::TextPainter(string text) :
 
 TextPainter::~TextPainter() {
 
+	boost::mutex::scoped_lock lock(_cairoMutex);
+
 	if (_context)
 		cairo_destroy(_context);
 
@@ -66,7 +68,7 @@ TextPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-	boost::unique_lock<boost::shared_mutex> lock(getMutex());
+	boost::mutex::scoped_lock lock(_cairoMutex);
 
 	// only update texture if necessary
 	//if (resolution != _lastResolution || roi != _lastRoi [> TODO: make this more efficient <]) {
@@ -86,6 +88,36 @@ TextPainter::draw(
 	//}
 
 	drawText();
+}
+
+void
+TextPainter::setText(std::string text) {
+
+	_text = text;
+
+	boost::mutex::scoped_lock lock(_cairoMutex);
+
+	computeSize(_lastRoi, _lastResolution);
+}
+
+void
+TextPainter::setTextSize(double size) {
+
+	_textSize = size;
+	_padding  = size/2;
+
+	boost::mutex::scoped_lock lock(_cairoMutex);
+
+	computeSize(_lastRoi, _lastResolution);
+}
+
+void
+TextPainter::setTextColor(double r, double g, double b, double a) {
+
+	_textColor[0] = r;
+	_textColor[1] = g;
+	_textColor[2] = b;
+	_textColor[3] = a;
 }
 
 void
@@ -111,7 +143,7 @@ TextPainter::computeSize(
 	// set font and color
 	LOG_ALL(textpainterlog) << "[computeSize] drawing cairo text with size " << _textSize << std::endl;
 	_cairoTextSize = _textSize;
-	setFont(_context, _textColor);
+	setFont();
 
 	// ncu ... normalized cairo units
 	//  gu ... open gl units
@@ -152,21 +184,6 @@ TextPainter::computeSize(
 
 void
 TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>& resolution) {
-
-	// make a copy of the data needed to draw the text
-	string __text;
-	double __textSize;
-	double __padding;
-	std::vector<double> __textColor;
-
-	{
-		boost::mutex::scoped_lock lock(_dataMutex);
-
-		__text      = _text;
-		__textSize  = _textSize;
-		__padding   = _padding;
-		__textColor = _textColor;
-	}
 
 	LOG_ALL(textpainterlog) << "[redrawText] redrawing text..." << std::endl;
 
@@ -220,8 +237,8 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 	LOG_ALL(textpainterlog) << "[redrawText] prepared new cairo surface" << std::endl;
 
 	// Scale the cairo text to fill the scaled surface.
-	_cairoTextSize = __textSize*textToCairoScale.x; // this will be incorrect for anisotropic resolutions
-	setFont(_context, __textColor);
+	_cairoTextSize = _textSize*textToCairoScale.x; // this will be incorrect for anisotropic resolutions
+	setFont();
 
 	LOG_ALL(textpainterlog) << "[redrawText] cairo text size is now " << _cairoTextSize << std::endl;
 
@@ -254,30 +271,30 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 			 cairoRoiStart.y - _cairoHeight);
 
 	// Draw the text.
-	cairo_show_text(_context, __text.c_str());
+	cairo_show_text(_context, _text.c_str());
 
 	finishBuffer();
 }
 
 void
-TextPainter::setFont(cairo_t* context, const std::vector<double>& color) {
+TextPainter::setFont() {
 
 	cairo_select_font_face(
-			context,
+			_context,
 			"sans-serif",
 			CAIRO_FONT_SLANT_NORMAL,
 			CAIRO_FONT_WEIGHT_NORMAL);
 
 	cairo_set_font_size(
-			context,
+			_context,
 			_cairoTextSize);
 
 	cairo_set_source_rgba(
-			context,
-			color[0],
-			color[1],
-			color[2],
-			color[3]);
+			_context,
+			_textColor[0],
+			_textColor[1],
+			_textColor[2],
+			_textColor[3]);
 }
 
 bool
@@ -392,57 +409,11 @@ TextPainter::drawText() {
 			detail::pixel_format_traits<cairo_pixel_t>::gl_type,
 			0));
 
-	//glColor4f(1.0, 0.5, 0.5, 0.75);
-	//glBegin(GL_QUADS);
-	//glVertex2f(_glRoi.minX, _glRoi.minY);
-	//glVertex2f(_glRoi.maxX, _glRoi.minY);
-	//glVertex2f(_glRoi.maxX, _glRoi.maxY);
-	//glVertex2f(_glRoi.minX, _glRoi.maxY);
-	//glEnd();
-
 	// clean up
 	glDisable(GL_BLEND);
 
 	// unbind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
-}
-
-void
-TextPainter::setText(std::string text) {
-
-	{
-		boost::mutex::scoped_lock lock(_dataMutex);
-
-		_text = text;
-
-		computeSize(_lastRoi, _lastResolution);
-	}
-}
-
-void
-TextPainter::setTextSize(double size) {
-
-	{
-		boost::mutex::scoped_lock lock(_dataMutex);
-
-		_textSize = size;
-		_padding  = size/2;
-
-		computeSize(_lastRoi, _lastResolution);
-	}
-}
-
-void
-TextPainter::setTextColor(double r, double g, double b, double a) {
-
-	{
-		boost::mutex::scoped_lock lock(_dataMutex);
-
-		_textColor[0] = r;
-		_textColor[1] = g;
-		_textColor[2] = b;
-		_textColor[3] = a;
-	}
 }
 
 } // namespace gui

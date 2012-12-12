@@ -49,7 +49,7 @@ private:
 	void drawText();
 
 	// set the cairo context font
-	void setFont(cairo_t* context, const std::vector<double>& color);
+	void setFont();
 
 	// allocate pixel buffer object and create cairo context
 	bool prepareBuffer();
@@ -106,8 +106,8 @@ private:
 	// the last roi for which the text was rendered
 	util::rect<double>  _lastRoi;
 
-	// mutex to guard access to the internal data
-	boost::mutex        _dataMutex;
+	// mutex to guard changes to the cairo context
+	boost::mutex        _cairoMutex;
 
 	// OpenGl pixel buffer object
 	GLuint              _buf;
