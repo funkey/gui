@@ -23,7 +23,7 @@ class ContainerView : public pipeline::SimpleProcessNode<>, public PlacingStrate
 public:
 
 	ContainerView(std::string name = "") :
-			_name(name) {
+			SimpleProcessNode<>(name) {
 
 		registerInputs(_painters, "painters");
 		registerOutput(_container, "container");
@@ -60,7 +60,7 @@ private:
 
 	void onPainterAdded(const pipeline::InputAdded<Painter>& signal) {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "got a new painter " << typeName(*signal.getData()) << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "got a new painter " << typeName(*signal.getData()) << std::endl;
 
 		if (!_container)
 			_container.createData();
@@ -75,7 +75,7 @@ private:
 
 	void onPainterRemoved(const pipeline::InputRemoved<Painter>& signal) {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "painter removed " << typeName(*signal.getData()) << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "painter removed " << typeName(*signal.getData()) << std::endl;
 
 		_container->remove(signal.getData());
 
@@ -87,7 +87,7 @@ private:
 
 	void onPaintersCleared(const pipeline::InputsCleared&) {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "painters cleared" << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "painters cleared" << std::endl;
 
 		_container->clear();
 
@@ -99,7 +99,7 @@ private:
 
 	void onContentChanged(const ContentChanged& signal) {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "got a ContentChanged signal -- passing it on" << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "got a ContentChanged signal -- passing it on" << std::endl;
 
 		setDirty(_container);
 
@@ -108,7 +108,7 @@ private:
 
 	void onSizeChanged(const SizeChanged&) {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
 
 		_container->updateSize();
 		setDirty(_container);
@@ -186,9 +186,9 @@ private:
 
 	void updateOffsets() {
 
-		LOG_ALL(containerviewlog) << _name << ": " << "updating offsets of painters:" << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": " << "updating offsets of painters:" << std::endl;
 		for (unsigned int i = 0; i < _painters.size(); i++)
-			LOG_ALL(containerviewlog) << _name << ": " << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
+			LOG_ALL(containerviewlog) << getName() << ": " << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
 
 		_offsets = PlacingStrategy::getOffsets(_painters.begin(), _painters.end());
 	}
@@ -213,9 +213,6 @@ private:
 
 	// the offsets of the painters in the container
 	std::vector<util::point<double> > _offsets;
-
-	// a name to identify this view in the logs
-	std::string _name;
 };
 
 } // namespace gui
