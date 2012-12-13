@@ -253,6 +253,8 @@ XWindow::processEvents() {
 						LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] "
 									  << "received an expose notification" << endl;
 
+						boost::mutex::scoped_lock lock(getDirtyMutex());
+
 						setDirty();
 					}
 
@@ -422,12 +424,16 @@ XWindow::processEvents() {
 
 		} // polling for events
 
+		boost::mutex::scoped_lock lock(getDirtyMutex());
+
 		// redraw only if needed
 		if (isDirty() && !closed() && _visible) {
 
-			LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] redraw requested" << endl;
-
 			setDirty(false);
+
+			lock.unlock();
+
+			LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] redraw requested" << endl;
 
 			redraw();
 		}

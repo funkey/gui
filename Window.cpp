@@ -210,6 +210,11 @@ Window::redraw() {
 		// make sure the painter is up-to-date
 		updateInputs();
 
+		// if we are still dirty after the update of the inputs we can safely 
+		// skip the redraw
+		if (isDirty())
+			return;
+
 		// draw the updated painter
 		_painter->draw(_region, point<double>(1.0, 1.0));
 
@@ -278,11 +283,15 @@ Window::saveFrame() {
 void
 Window::onInputAdded(const pipeline::InputAdded<gui::Painter>& signal) {
 
+	boost::mutex::scoped_lock lock(getDirtyMutex());
+
 	setDirty();
 }
 
 void
 Window::onModified(const pipeline::Modified& signal) {
+
+	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
@@ -293,6 +302,8 @@ Window::onSizeChanged(const SizeChanged& signal) {
 	// TODO:
 	// Here, we could resize the window to fit the view. However, this should be
 	// an optional feature.
+
+	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
