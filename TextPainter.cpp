@@ -36,6 +36,8 @@ TextPainter::TextPainter(string text) :
 	// create a pixel buffer object
 	glCheck(glGenBuffersARB(1, &_buf));
 
+	LOG_DEBUG(textpainterlog) << "created buffer with id " << _buf << std::endl;
+
 	// create cairo font options
 	_fontOptions = cairo_font_options_create();
 
