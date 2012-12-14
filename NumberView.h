@@ -7,6 +7,7 @@
 
 namespace gui {
 
+template <typename Precision>
 class NumberView : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -22,14 +23,36 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<double>       _value;
+	pipeline::Input<Precision>    _value;
 	pipeline::Output<TextPainter> _painter;
 
-	signals::Slot<const SizeChanged>        _sizeChanged;
+	signals::Slot<const SizeChanged> _sizeChanged;
 
 	// the number of digits to show after the comma
 	int _precision;
 };
+
+template <typename Precision>
+NumberView<Precision>::NumberView(int precision) :
+	_precision(precision) {
+
+	registerInput(_value, "value");
+	registerOutput(_painter, "painter");
+
+	_painter.registerForwardSlot(_sizeChanged);
+}
+
+template <typename Precision>
+void
+NumberView<Precision>::updateOutputs() {
+
+	std::ostringstream ss;
+	ss << std::fixed << std::setprecision(_precision) << *_value;
+
+	_painter->setText(ss.str());
+
+	_sizeChanged();
+}
 
 } // namespace gui
 

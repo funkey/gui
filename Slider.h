@@ -30,7 +30,7 @@ private:
 	boost::shared_ptr<SliderImpl<Precision> > _sliderImpl;
 
 	// a view for the current value
-	boost::shared_ptr<NumberView> _valueView;
+	boost::shared_ptr<NumberView<Precision> > _valueView;
 
 	// a container view for the name, the slider, and the value
 	boost::shared_ptr<ContainerView<HorizontalPlacing> > _container;
@@ -40,7 +40,7 @@ template <typename Precision>
 Slider<Precision>::Slider(std::string name, Precision min, Precision max) :
 	_textView(boost::make_shared<TextView>(name + ":")),
 	_sliderImpl(boost::make_shared<SliderImpl<Precision> >(min, max, min)),
-	_valueView(boost::make_shared<NumberView>()),
+	_valueView(boost::make_shared<NumberView<Precision> >()),
 	_container(boost::make_shared<ContainerView<HorizontalPlacing> >()) {
 
 	// setup internal pipeline connections
@@ -57,7 +57,7 @@ template <typename Precision>
 Slider<Precision>::Slider(std::string name, Precision min, Precision max, Precision value) :
 	_textView(boost::make_shared<TextView>(name + ":")),
 	_sliderImpl(boost::make_shared<SliderImpl<Precision> >(min, max, value)),
-	_valueView(boost::make_shared<NumberView>()),
+	_valueView(boost::make_shared<NumberView<Precision> >()),
 	_container(boost::make_shared<ContainerView<HorizontalPlacing> >()) {
 
 	// setup internal pipeline connections
