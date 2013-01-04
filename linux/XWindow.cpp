@@ -1,5 +1,7 @@
 #include <cstdlib>
 
+#include <boost/timer/timer.hpp>
+
 #include <X11/extensions/Xrandr.h>
 
 #include <gui/Modifiers.h>
@@ -196,12 +198,25 @@ XWindow::processEvents() {
 
 	LOG_DEBUG(xlog) << "[XWindow] [" << getCaption() << "] entering event loop" << endl;
 
+	boost::timer::cpu_timer timer;
+
+	xcb_generic_event_t *event;
+
 	while (!closed()) {
 
+		timer.stop();
+		boost::timer::cpu_times elapsed = timer.elapsed();
+
+		// reset timer
+		timer = boost::timer::cpu_timer();
+
+		boost::timer::nanosecond_type nanosElapsed(elapsed.wall);
+
+		// wait until at least 100 microseconds have passed since the last event 
+		// poll
+		usleep(std::max(static_cast<boost::timer::nanosecond_type>(0), 100 - nanosElapsed/1000));
+
 		// poll for events
-
-		xcb_generic_event_t *event;
-
 		while (event = xcb_poll_for_event(_xcbConnection)) {
 
 			LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] got an event" << endl;
