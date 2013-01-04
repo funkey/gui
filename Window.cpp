@@ -196,6 +196,10 @@ void
 Window::redraw() {
 
 	// They say OpenGl is thread safe. They are wrong.
+	//
+	// Update: It seems only buffer creation and destruction is not thread-safe 
+	// (at least on nvidia hardware). Therefore, we lock at a finer scale now.
+
 	//boost::mutex::scoped_lock lock(OpenGl::getMutex());
 
 	// ensure that our context is active

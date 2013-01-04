@@ -33,8 +33,12 @@ TextPainter::TextPainter(string text) :
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
 
-	// create a pixel buffer object
-	glCheck(glGenBuffersARB(1, &_buf));
+	{
+		boost::mutex::scoped_lock lock(OpenGl::getMutex());
+
+		// create a pixel buffer object
+		glCheck(glGenBuffersARB(1, &_buf));
+	}
 
 	LOG_DEBUG(textpainterlog) << "created buffer with id " << _buf << std::endl;
 
@@ -46,8 +50,6 @@ TextPainter::TextPainter(string text) :
 }
 
 TextPainter::~TextPainter() {
-
-	boost::mutex::scoped_lock lock(_cairoMutex);
 
 	if (_context)
 		cairo_destroy(_context);
@@ -61,8 +63,12 @@ TextPainter::~TextPainter() {
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
 
-	// delete pixel buffer object
-	glCheck(glDeleteBuffersARB(1, &_buf));
+	{
+		boost::mutex::scoped_lock lock(OpenGl::getMutex());
+
+		// delete pixel buffer object
+		glCheck(glDeleteBuffersARB(1, &_buf));
+	}
 }
 
 void
@@ -71,6 +77,10 @@ TextPainter::draw(
 		const util::point<double>& resolution) {
 
 	boost::mutex::scoped_lock lock(_cairoMutex);
+
+	// drawing text is causing too much trouble -- don't allow concurrent access 
+	// to buffers
+	boost::mutex::scoped_lock openGlLock(OpenGl::getMutex());
 
 	// only update texture if necessary
 	//if (resolution != _lastResolution || roi != _lastRoi [> TODO: make this more efficient <]) {
