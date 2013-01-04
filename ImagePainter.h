@@ -289,13 +289,19 @@ ImagePainter<Image, Pointer>::draw(
 					valuePainter.setTextSize(0.1);
 					valuePainter.setTextColor((*_image)(x, y), 0.5 - (*_image)(x, y)/2.0, 0.5 + (*_image)(x, y)/2.0, (resolution.x - 30)/100);
 
+					TextPainter positionPainter(boost::lexical_cast<std::string>(x) + ", " + boost::lexical_cast<std::string>(y));
+					positionPainter.setTextSize(0.1);
+					positionPainter.setTextColor((*_image)(x, y), 0.5 - (*_image)(x, y)/2.0, 0.5 + (*_image)(x, y)/2.0, (resolution.x - 30)/100);
+
 					LOG_ALL(imagepainterlog) << "drawing text with roi "
 					                      << (roi - util::point<double>(x, y)) << " and resolution "
 					                      << resolution << std::endl;
 
 					glTranslatef( x,  y, 0.0f);
 					valuePainter.draw(roi - util::point<double>(x, y), resolution);
-					glTranslatef(-x, -y, 0.0f);
+					glTranslatef( 0.0f,  0.1f, 0.0f);
+					positionPainter.draw(roi - util::point<double>(x, y), resolution);
+					glTranslatef(-x, -y - 0.1f, 0.0f);
 				}
 			}
 		}
