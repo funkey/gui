@@ -78,12 +78,31 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to query frame-buffer configurations") << STACK_TRACE);
 	}
 
-	// select first frame-buffer configuration and visual id
+	// select first frame-buffer configuration with the same depth as the screen
 
-	int visualId = 0;
+	int screenDepth = _xcbScreen->root_depth;
 
-	_fbConfig = fbConfigs[0];
-	glXGetFBConfigAttrib(_display, _fbConfig, GLX_VISUAL_ID , &visualId);
+	int visualId = -1;
+
+	for (int i = 0; i < numFbConfigs; i++) {
+
+		int fbDepth;
+		glXGetFBConfigAttrib(_display, fbConfigs[i], GLX_BUFFER_SIZE, &fbDepth);
+
+		if (fbDepth == screenDepth) {
+
+			LOG_ALL(xlog) << "[XWindow] found a frame-buffer configuration with screen depth of " << screenDepth << std::endl;
+
+			_fbConfig = fbConfigs[i];
+			glXGetFBConfigAttrib(_display, _fbConfig, GLX_VISUAL_ID , &visualId);
+		}
+	}
+
+	if (visualId == -1) {
+
+		XCloseDisplay(_display);
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to find an fb config with desired depth") << STACK_TRACE);
+	}
 
 	// create xcb colormap
 
@@ -113,7 +132,7 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 	xcb_create_window(
 			_xcbConnection,
-			XCB_COPY_FROM_PARENT,
+			screenDepth,
 			_xcbWindow,
 			_xcbScreen->root,
 			mode.position.x, mode.position.y,
