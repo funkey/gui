@@ -22,11 +22,13 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	_visible(false),
 	_closed(false) {
 
-	//// since this library was designed to be multithreaded, we feel it is safe
-	//// to enable X multithreading here -- even if the user does not need it
-	//if (!XInitThreads())
-		//LOG_ERROR(xlog) << "[XWindow] set up X multithreading was not successful"
-						//<< endl;
+	// By using xcb we wouldn't really need that here. However, when using xcb 
+	// together with VirtualGl, calling this function is important for 
+	// multithreaded operation. Since in the other cases it doesn't hurt to 
+	// initialise xlibs threading support, we call it here.
+	if (!XInitThreads())
+		LOG_ERROR(xlog) << "[XWindow] set up X multithreading was not successful"
+						<< endl;
 
 	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] setting up X server connection" << endl;
 
@@ -78,76 +80,83 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to query frame-buffer configurations") << STACK_TRACE);
 	}
 
+	LOG_ALL(xlog) << "[XWindow] found " << numFbConfigs << " frame-buffere configurations" << std::endl;
+
 	// select first frame-buffer configuration with the same depth as the screen
 
 	int screenDepth = _xcbScreen->root_depth;
+	int fbDepth;
 
-	int visualId = -1;
+	LOG_ALL(xlog) << "[XWindow] screen has a depth of " << screenDepth << std::endl;
 
+	// try every frame-buffer configuration until one works
 	for (int i = 0; i < numFbConfigs; i++) {
 
-		int fbDepth;
-		glXGetFBConfigAttrib(_display, fbConfigs[i], GLX_BUFFER_SIZE, &fbDepth);
+		glXGetFBConfigAttrib(_display, fbConfigs[i], GLX_DEPTH_SIZE, &fbDepth);
 
-		if (fbDepth == screenDepth) {
+		LOG_ALL(xlog) << "[XWindow] trying frame-buffer configuration with depth of " << fbDepth << std::endl;
 
-			LOG_ALL(xlog) << "[XWindow] found a frame-buffer configuration with screen depth of " << screenDepth << std::endl;
+		_fbConfig = fbConfigs[i];
 
-			_fbConfig = fbConfigs[i];
-			glXGetFBConfigAttrib(_display, _fbConfig, GLX_VISUAL_ID , &visualId);
+		int visualId;
+		glXGetFBConfigAttrib(_display, _fbConfig, GLX_VISUAL_ID , &visualId);
+
+		// create xcb colormap
+
+		xcb_colormap_t colormap = xcb_generate_id(_xcbConnection);
+
+		xcb_create_colormap(
+				_xcbConnection,
+				XCB_COLORMAP_ALLOC_NONE,
+				colormap,
+				_xcbScreen->root,
+				visualId);
+
+		// create xcb window
+
+		_xcbWindow = xcb_generate_id(_xcbConnection);
+
+		uint32_t eventmask =
+				XCB_EVENT_MASK_EXPOSURE |
+				XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+				XCB_EVENT_MASK_VISIBILITY_CHANGE |
+				XCB_EVENT_MASK_KEY_PRESS |
+				XCB_EVENT_MASK_BUTTON_PRESS |
+				XCB_EVENT_MASK_BUTTON_RELEASE |
+				XCB_EVENT_MASK_POINTER_MOTION;
+		uint32_t valuelist[] = { eventmask, colormap, 0 };
+		uint32_t valuemask = XCB_CW_EVENT_MASK | XCB_CW_COLORMAP;
+
+		xcb_void_cookie_t createWindowCookie = xcb_create_window_checked(
+				_xcbConnection,
+				fbDepth,
+				_xcbWindow,
+				_xcbScreen->root,
+				mode.position.x, mode.position.y,
+				mode.size.x, mode.size.y,
+				0,
+				XCB_WINDOW_CLASS_INPUT_OUTPUT,
+				visualId,
+				valuemask,
+				valuelist);
+
+		xcb_generic_error_t* error = xcb_request_check(_xcbConnection, createWindowCookie);
+
+		bool success = (error == 0);
+
+		free(error);
+
+		if (success) {
+
+			free(error);
+			break;
+
+		} else {
+
+			// this was the last frame-buffer configuration
+			if (i == numFbConfigs - 1)
+				BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to create xcb window") << STACK_TRACE);
 		}
-	}
-
-	if (visualId == -1) {
-
-		XCloseDisplay(_display);
-		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to find an fb config with desired depth") << STACK_TRACE);
-	}
-
-	// create xcb colormap
-
-	xcb_colormap_t colormap = xcb_generate_id(_xcbConnection);
-
-	xcb_create_colormap(
-			_xcbConnection,
-			XCB_COLORMAP_ALLOC_NONE,
-			colormap,
-			_xcbScreen->root,
-			visualId);
-
-	// create xcb window
-
-	_xcbWindow = xcb_generate_id(_xcbConnection);
-
-	uint32_t eventmask =
-			XCB_EVENT_MASK_EXPOSURE |
-			XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-			XCB_EVENT_MASK_VISIBILITY_CHANGE |
-			XCB_EVENT_MASK_KEY_PRESS |
-			XCB_EVENT_MASK_BUTTON_PRESS |
-			XCB_EVENT_MASK_BUTTON_RELEASE |
-			XCB_EVENT_MASK_POINTER_MOTION;
-	uint32_t valuelist[] = { eventmask, colormap, 0 };
-	uint32_t valuemask = XCB_CW_EVENT_MASK | XCB_CW_COLORMAP;
-
-	xcb_create_window(
-			_xcbConnection,
-			screenDepth,
-			_xcbWindow,
-			_xcbScreen->root,
-			mode.position.x, mode.position.y,
-			mode.size.x, mode.size.y,
-			0,
-			XCB_WINDOW_CLASS_INPUT_OUTPUT,
-			visualId,
-			valuemask,
-			valuelist);
-
-	if (!_xcbWindow) {
-
-		xcb_destroy_window(_xcbConnection, _xcbWindow);
-
-		BOOST_THROW_EXCEPTION(GuiError() << error_message("[XWindow] unable to create xcb window") << STACK_TRACE);
 	}
 
 	// set window name
