@@ -1,6 +1,5 @@
 #include <cstdlib>
-
-#include <boost/timer/timer.hpp>
+#include <ctime>
 
 #include <X11/extensions/Xrandr.h>
 
@@ -226,23 +225,22 @@ XWindow::processEvents() {
 
 	LOG_DEBUG(xlog) << "[XWindow] [" << getCaption() << "] entering event loop" << endl;
 
-	boost::timer::cpu_timer timer;
-
 	xcb_generic_event_t *event;
+
+	std::clock_t timer;
 
 	while (!closed()) {
 
-		timer.stop();
-		boost::timer::cpu_times elapsed = timer.elapsed();
+		// get the number of elapsed microseconds
+		double elapsed = (std::clock() - timer)/static_cast<double>(CLOCKS_PER_SEC);
+		int microsElapsed = static_cast<int>(elapsed*10e6);
 
 		// reset timer
-		timer = boost::timer::cpu_timer();
-
-		boost::timer::nanosecond_type nanosElapsed(elapsed.wall);
+		timer = std::clock();
 
 		// wait until at least 100 microseconds have passed since the last event 
 		// poll
-		usleep(std::max(static_cast<boost::timer::nanosecond_type>(0), 100 - nanosElapsed/1000));
+		usleep(std::max(0, 100 - microsElapsed));
 
 		// poll for events
 		while (event = xcb_poll_for_event(_xcbConnection)) {
