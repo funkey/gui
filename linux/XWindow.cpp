@@ -232,7 +232,7 @@ XWindow::processEvents() {
 	while (!closed()) {
 
 		// get the number of elapsed microseconds
-		double elapsed = (std::clock() - timer)/static_cast<double>(CLOCKS_PER_SEC);
+		double elapsed = static_cast<double>(std::clock() - timer)/static_cast<double>(CLOCKS_PER_SEC);
 		int microsElapsed = static_cast<int>(elapsed*10e6);
 
 		// reset timer
@@ -240,7 +240,10 @@ XWindow::processEvents() {
 
 		// wait until at least 100 microseconds have passed since the last event 
 		// poll
-		usleep(std::max(0, 100 - microsElapsed));
+		unsigned int sleepMicros = std::max(0, 100 - microsElapsed);
+
+		//LOG_ALL(xlog) << "sleeping for " << sleepMicros << " micros" << std::endl;
+		usleep(sleepMicros);
 
 		// poll for events
 		while (event = xcb_poll_for_event(_xcbConnection)) {
