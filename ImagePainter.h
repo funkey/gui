@@ -103,7 +103,15 @@ public:
 	 */
 	virtual void update();
 
-private:
+	/**
+	 * Set a color to colorize the image.
+	 */
+	void setColor(float red, float green, float blue);
+
+	/**
+	 * Show the image transparent in the dart areas.
+	 */
+	void setTransparent(bool transparent);
 
 	/**
 	 * Normalize and re-load image for intensity images.
@@ -150,6 +158,12 @@ private:
 
 	// indicate the need to reload the texture to the texture thread
 	bool _needReload;
+
+	// color the image
+	float _red, _green, _blue;
+
+	// show the image transparent (dark = transparent)
+	bool _transparent;
 };
 
 /******************
@@ -161,7 +175,11 @@ ImagePainter<Image, Pointer>::ImagePainter(bool reloadThread) :
 	_normalize(false),
 	_imageTexture(0),
 	_hasReloadThread(reloadThread),
-	_needReload(true) {
+	_needReload(true),
+	_red(1.0),
+	_green(1.0),
+	_blue(1.0),
+	_transparent(false) {
 
 	LOG_ALL(imagepainterlog) << "initializing..." << std::endl;
 	_init_ptr(_image);
@@ -267,13 +285,19 @@ ImagePainter<Image, Pointer>::draw(
 
 	_imageTexture->bind();
 
-	glColor3f(1.0, 1.0, 1.0);
+	glColor3f(_red, _green, _blue);
+	if (_transparent) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+	}
 	glBegin(GL_QUADS);
 	glTexCoord2d(0.0, 0.0); glVertex2d(0.0,   0.0); 
 	glTexCoord2d(1.0, 0.0); glVertex2d(width, 0.0); 
 	glTexCoord2d(1.0, 1.0); glVertex2d(width, height); 
 	glTexCoord2d(0.0, 1.0); glVertex2d(0.0,   height); 
 	glEnd();
+	if (_transparent)
+		glDisable(GL_BLEND);
 
 	// a pixel is large enough to be written in
 	if (resolution.x > 30) {
@@ -451,6 +475,22 @@ ImagePainter<Image, Pointer>::loadNormalized(const boost::false_type& arithmetic
 
 	// for non-intensity images we leave it like that for the moment...
 	_imageTexture->loadData(_image->begin());
+}
+
+template <typename Image, typename Pointer>
+void
+ImagePainter<Image, Pointer>::setColor(float red, float green, float blue) {
+
+	_red = red;
+	_green = green;
+	_blue = blue;
+}
+
+template <typename Image, typename Pointer>
+void
+ImagePainter<Image, Pointer>::setTransparent(bool transparent) {
+
+	_transparent = transparent;
 }
 
 } // namespace gui
