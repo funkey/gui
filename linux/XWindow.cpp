@@ -227,7 +227,7 @@ XWindow::processEvents() {
 
 	xcb_generic_event_t *event;
 
-	std::clock_t timer;
+	std::clock_t timer = std::clock();
 
 	while (!closed()) {
 
@@ -240,7 +240,7 @@ XWindow::processEvents() {
 
 		// wait until at least 100 microseconds have passed since the last event 
 		// poll
-		unsigned int sleepMicros = std::max(0, 100 - microsElapsed);
+		int sleepMicros = std::max(0, 100 - microsElapsed);
 
 		//LOG_ALL(xlog) << "sleeping for " << sleepMicros << " micros" << std::endl;
 		usleep(sleepMicros);
