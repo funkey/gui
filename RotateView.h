@@ -3,7 +3,8 @@
 
 #include <pipeline/all.h>
 #include <gui/RotatePainter.h>
-#include <gui/Signals.h>
+#include <gui/MouseSignals.h>
+#include <gui/KeySignals.h>
 #include <gui/Keys.h>
 
 namespace gui {

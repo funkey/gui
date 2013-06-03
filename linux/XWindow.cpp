@@ -1,7 +1,6 @@
 #include <cstdlib>
 
 #include <X11/extensions/Xrandr.h>
-#include <X11/extensions/XInput2.h>
 
 #include <gui/linux/XWindow.h>
 #include <gui/Modifiers.h>
@@ -19,7 +18,11 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	WindowBase(caption),
 	_closed(false),
 	_fullscreen(false),
-	_previousMode(-1) {
+	_previousMode(-1),
+	_penSlopeX(0.07459),
+	_penSlopeY(0.07438),
+	_penOffsetX(0.053229),
+	_penOffsetY(-0.000444) {
 
 	// since this library was designed to be multithreaded, we feel it is safe
 	// to enable X multithreading here -- even if the user does not need it
@@ -232,85 +235,113 @@ XWindow::processEvents() {
 			XIDeviceEvent* deviceEvent = (XIDeviceEvent*)event.xcookie.data;
 			double* val = deviceEvent->valuators.values;
 
+			InputType inputType = getInputType(deviceEvent->deviceid);
 
-			LOG_ALL(xlog) << "[XWindow] detail: " << deviceEvent->detail << std::endl;
+			LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
+			LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
+			LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+			LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
+			LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
 			for (unsigned int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
 				if (XIMaskIsSet(deviceEvent->valuators.mask, i))
-					LOG_ALL(xlog) << "[XWindow] " << i << ": " << *val++ << std::endl;
+					LOG_ALL(xlog) << "[XWindow] \t" << i << ": " << *val++ << std::endl;
 
 			switch (event.xcookie.evtype) {
 
 				case XI_TouchBegin:
 
-					LOG_ALL(xlog) << "[XWindow] received xinput2 touch begin event from device "
-					              << deviceEvent->deviceid << ", source "
-					              << deviceEvent->sourceid  <<  " at "
-					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					processFingerDownEvent(
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
 					break;
 
 				case XI_TouchUpdate:
 
-					LOG_ALL(xlog) << "[XWindow] received xinput2 touch update event from device "
-					              << deviceEvent->deviceid << ", source "
-					              << deviceEvent->sourceid  << " at "
-					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					processFingerMoveEvent(
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
 					break;
 
 				case XI_TouchEnd:
 
-					LOG_ALL(xlog) << "[XWindow] received xinput2 touch end event from device "
-					              << deviceEvent->deviceid << ", source "
-					              << deviceEvent->sourceid  << " at "
-					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					processFingerUpEvent(
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
 					break;
 
 				case XI_ButtonPress:
-					LOG_ALL(xlog) << "[XWindow] window "
-								  << " received a button press notification" << endl;
 
 					button    = buttonToButton(deviceEvent->detail);
 					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
 
-					processButtonDownEvent(
-							button,
-							point<double>(deviceEvent->event_x, deviceEvent->event_y),
-							modifiers);
+					if (inputType == Mouse) {
+
+						processButtonDownEvent(
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								modifiers);
+
+					} else if (inputType == Pen) {
+
+						processPenDownEvent(
+								button,
+								getPenPosition(deviceEvent),
+								getPressure(deviceEvent),
+								modifiers);
+					}
 
 					break;
 
 				case XI_ButtonRelease:
-					LOG_ALL(xlog) << "[XWindow] window "
-								  << " received a button release notification" << endl;
 
 					button    = buttonToButton(deviceEvent->detail);
 					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
 
-					processButtonUpEvent(
-							button,
-							point<double>(deviceEvent->event_x, deviceEvent->event_y),
-							modifiers);
+					if (inputType == Mouse) {
+
+						processButtonUpEvent(
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								modifiers);
+
+					} else if (inputType == Pen) {
+
+						processPenUpEvent(
+								button,
+								getPenPosition(deviceEvent),
+								getPressure(deviceEvent),
+								modifiers);
+					}
 
 					break;
 
 				case XI_Motion:
-					LOG_ALL(xlog) << "[XWindow] window "
-								  << " received a motion notification" << endl;
 
 					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
 
-					processMouseMoveEvent(
-							point<double>(deviceEvent->event_x, deviceEvent->event_y),
-							modifiers);
+					if (inputType == Mouse) {
 
-					break;
+						processMouseMoveEvent(
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								modifiers);
 
-					LOG_ALL(xlog) << "[XWindow] received xinput2 event from device "
-					              << deviceEvent->deviceid << ", source "
-					              << deviceEvent->sourceid  << " at  "
-					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					} else if (inputType == Pen) {
+
+						processPenMoveEvent(
+								getPenPosition(deviceEvent),
+								getPressure(deviceEvent),
+								modifiers);
+					}
+
 					break;
 
 				default:
+
 					LOG_ALL(xlog) << "[XWindow] received unknown xinput2 event" << std::endl;
 					break;
 			}
@@ -622,6 +653,69 @@ XWindow::buttonToButton(unsigned int xbutton) {
 		default:
 			return buttons::NoButton;
 	}
+}
+
+XWindow::InputType
+XWindow::getInputType(int deviceid) {
+
+	std::map<int, InputType>::iterator r = _inputTypes.find(deviceid);
+
+	if (r != _inputTypes.end())
+		return r->second;
+
+	int numFound;
+	XIDeviceInfo* info = XIQueryDevice(_display, deviceid, &numFound);
+
+	for (int i = 0; i < numFound; i++) {
+
+		if (strcasestr(info[i].name, "touch")) {
+
+			LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Touch" << std::endl;
+
+			_inputTypes[deviceid] = Touch;
+			XIFreeDeviceInfo(info);
+
+			return Touch;
+
+		} else if (strcasestr(info[i].name, "pen")) {
+
+			LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Pen" << std::endl;
+
+			_inputTypes[deviceid] = Pen;
+			XIFreeDeviceInfo(info);
+
+			return Pen;
+		}
+	}
+
+	LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Mouse" << std::endl;
+
+	// default
+	_inputTypes[deviceid] = Mouse;
+
+	XIFreeDeviceInfo(info);
+}
+
+util::point<double>
+XWindow::getPenPosition(XIDeviceEvent* event) {
+
+	util::point<double> position;
+
+	position.x = event->valuators.values[0]*_penSlopeX + _penOffsetX;
+	position.y = event->valuators.values[1]*_penSlopeY + _penOffsetY;
+
+	return position;
+}
+
+double
+XWindow::getPressure(XIDeviceEvent* event) {
+
+	const unsigned int pressureIndex = 2;
+
+	if (XIMaskIsSet(event->valuators.mask, pressureIndex))
+		return event->valuators.values[2];
+
+	return 0.75;
 }
 
 } // namespace gui

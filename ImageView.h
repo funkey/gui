@@ -2,7 +2,7 @@
 #define IMAGE_VIEW_H__
 
 #include <pipeline/all.h>
-#include <gui/Signals.h>
+#include <gui/MouseSignals.h>
 #include <util/Logger.h>
 #include <imageprocessing/Image.h>
 #include "ImagePainter.h"

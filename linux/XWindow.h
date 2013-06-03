@@ -1,9 +1,11 @@
 #ifndef X_WINDOW_H__
 #define X_WINDOW_H__
 
+#include <map>
 #include <string>
 
 #include <X11/Xlib.h>
+#include <X11/extensions/XInput2.h>
 
 #include <gui/WindowBase.h>
 #include <gui/WindowMode.h>
@@ -64,6 +66,16 @@ public:
 private:
 
 	/**
+	 * Classification of input devices.
+	 */
+	enum InputType {
+
+		Mouse,
+		Pen,
+		Touch
+	};
+
+	/**
 	 * Finds the closes fullscreen resolution to the one given in mode and
 	 * switches to it.
 	 */
@@ -88,6 +100,22 @@ private:
 	 * Converts an X button to a Button.
 	 */
 	buttons::Button buttonToButton(unsigned int xbutton);
+
+	/**
+	 * Determine the input type given a device id.
+	 */
+	InputType getInputType(int deviceid);
+
+	/**
+	 * Transform the pen device coordinates to screen coordinates according to 
+	 * the calibration.
+	 */
+	util::point<double> getPenPosition(XIDeviceEvent* event);
+
+	/**
+	 * Assuming the input device is a pen, get the pressure level.
+	 */
+	double getPressure(XIDeviceEvent* event);
 
 	// the X11 display
 	Display* _display;
@@ -118,6 +146,15 @@ private:
 
 	// the video mode before the swith to fullscreen
 	int      _previousMode;
+
+	// map from device ID to input type
+	std::map<int, InputType> _inputTypes;
+
+	// calibration for the pen
+	double _penSlopeX;
+	double _penSlopeY;
+	double _penOffsetX;
+	double _penOffsetY;
 };
 
 } // namespace gui

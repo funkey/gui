@@ -37,6 +37,12 @@ Window::Window(
 	_painter.registerBackwardSlot(_resize);
 	_painter.registerBackwardSlot(_keyDown);
 	_painter.registerBackwardSlot(_keyUp);
+	_painter.registerBackwardSlot(_fingerMove);
+	_painter.registerBackwardSlot(_fingerDown);
+	_painter.registerBackwardSlot(_fingerUp);
+	_painter.registerBackwardSlot(_penMove);
+	_painter.registerBackwardSlot(_penDown);
+	_painter.registerBackwardSlot(_penUp);
 	_painter.registerBackwardSlot(_mouseMove);
 	_painter.registerBackwardSlot(_mouseDown);
 	_painter.registerBackwardSlot(_mouseUp);
@@ -136,6 +142,72 @@ Window::processKeyDownEvent(const keys::Key& key, const Modifiers& modifiers) {
 }
 
 bool
+Window::processFingerUpEvent(
+		const buttons::Button&     button,
+		const util::point<double>& position,
+		int                        id,
+		const Modifiers&           modifiers) {
+
+	FingerUp signal(button, position, id, modifiers);
+	_fingerUp(signal);
+}
+
+bool
+Window::processFingerDownEvent(
+		const buttons::Button&     button,
+		const util::point<double>& position,
+		int                        id,
+		const Modifiers&           modifiers) {
+
+	FingerDown signal(button, position, id, modifiers);
+	_fingerDown(signal);
+}
+
+bool
+Window::processFingerMoveEvent(
+		const util::point<double>& position,
+		int                        id,
+		const Modifiers&           modifiers) {
+
+	FingerMove signal(position, id, modifiers);
+	_fingerMove(signal);
+}
+
+bool
+Window::processPenUpEvent(
+		const buttons::Button&     button,
+		const util::point<double>& position,
+		double                     pressure,
+		const Modifiers&           modifiers) {
+
+	PenUp signal(button, position, pressure, modifiers);
+	_penUp(signal);
+}
+
+bool
+Window::processPenDownEvent(
+		const buttons::Button&     button,
+		const util::point<double>& position,
+		double                     pressure,
+		const Modifiers&           modifiers) {
+
+	PenDown signal(button, position, pressure, modifiers);
+	_penDown(signal);
+}
+
+bool
+Window::processPenMoveEvent(
+		const util::point<double>& position,
+		double                     pressure,
+		const Modifiers&           modifiers) {
+
+	LOG_ALL(winlog) << "[Window] sending signal pen move" << std::endl;
+
+	PenMove signal(position, pressure, modifiers);
+	_penMove(signal);
+}
+
+bool
 Window::processButtonUpEvent(
 		const buttons::Button&     button,
 		const util::point<double>& position,
@@ -150,9 +222,6 @@ Window::processButtonDownEvent(
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		const Modifiers&           modifiers) {
-
-	LOG_ALL(winlog) << "[Window (" << getCaption() << ")] "
-	                << "a mouse button was pressed" << std::endl;
 
 	MouseDown signal(button, position, modifiers);
 	_mouseDown(signal);

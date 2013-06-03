@@ -75,6 +75,70 @@ public:
 	 *
 	 * @param event The input event.
 	 */
+	virtual bool processFingerUpEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processFingerDownEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processFingerMoveEvent(
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processPenUpEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processPenDownEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processPenMoveEvent(
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
 	virtual bool processButtonUpEvent(
 			const buttons::Button&     button,
 			const util::point<double>& position,

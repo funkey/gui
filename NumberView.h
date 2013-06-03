@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <gui/TextPainter.h>
-#include <gui/Signals.h>
+#include <gui/MouseSignals.h>
 
 namespace gui {
 
