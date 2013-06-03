@@ -13,23 +13,31 @@ struct WindowMode {
 			int  width  = 320,
 			int  height = 240,
 			int  x = 0,
-			int  y = 0) :
+			int  y = 0,
+			int  depth_      = 32,
+			bool fullscreen_ = false) :
 		size(width, height),
-		position(x, y),
-		mapped(true) {}
+		position((fullscreen_ ? 0 : x), (fullscreen_ ? 0 : y)),
+		depth(depth_),
+		fullscreen(fullscreen_) {}
 
 	WindowMode(
 			const point<int>& size_,
-			const point<int>& position_ = point<int>(0, 0)) :
+			const point<int>& position_ = point<int>(0, 0),
+			int   depth_                = 32,
+			bool  fullscreen_           = false) :
 		size(size_),
-		position(position_),
-		mapped(true) {}
+		position(fullscreen_ ? point<int>(0, 0) : position_),
+		depth(depth_),
+		fullscreen(fullscreen_) {}
 
 	point<int> size;
 
 	point<int> position;
 
-	bool mapped;
+	int depth;
+
+	bool fullscreen;
 };
 
 } // namespace gui
