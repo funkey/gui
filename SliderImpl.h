@@ -3,7 +3,7 @@
 
 #include <boost/function.hpp>
 
-#include <gui/Signals.h>
+#include <gui/MouseSignals.h>
 #include <gui/SliderPainter.h>
 #include <pipeline/all.h>
 

@@ -5,7 +5,8 @@
 
 #include <gui/IsPlacingStrategy.h>
 #include <gui/ContainerPainter.h>
-#include <gui/Signals.h>
+#include <gui/MouseSignals.h>
+#include <gui/KeySignals.h>
 #include <pipeline/all.h>
 #include <signals/Slots.h>
 #include <util/point.hpp>

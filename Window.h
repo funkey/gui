@@ -8,7 +8,10 @@
 #include <gui/OverlayPlacing.h>
 #include <gui/GlContext.h>
 #include <gui/GlContextCreator.h>
-#include <gui/Signals.h>
+#include <gui/FingerSignals.h>
+#include <gui/PenSignals.h>
+#include <gui/MouseSignals.h>
+#include <gui/KeySignals.h>
 #include <gui/Painter.h>
 #include <pipeline/all.h>
 #include <signals/Slot.h>
@@ -145,6 +148,70 @@ private:
 	 *
 	 * @param event The input event.
 	 */
+	bool processFingerUpEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	bool processFingerDownEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	bool processFingerMoveEvent(
+			const util::point<double>& position,
+			int                        id,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	bool processPenUpEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	bool processPenDownEvent(
+			const buttons::Button&     button,
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	bool processPenMoveEvent(
+			const util::point<double>& position,
+			double                     pressure,
+			const Modifiers&           modifiers);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
 	bool processButtonUpEvent(
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -211,6 +278,12 @@ private:
 	signals::Slot<const Resize>           _resize;
 	signals::Slot<KeyDown>                _keyDown;
 	signals::Slot<KeyUp>                  _keyUp;
+	signals::Slot<FingerMove>             _fingerMove;
+	signals::Slot<FingerDown>             _fingerDown;
+	signals::Slot<FingerUp>               _fingerUp;
+	signals::Slot<PenMove>                _penMove;
+	signals::Slot<PenDown>                _penDown;
+	signals::Slot<PenUp>                  _penUp;
 	signals::Slot<MouseMove>              _mouseMove;
 	signals::Slot<MouseDown>              _mouseDown;
 	signals::Slot<MouseUp>                _mouseUp;
