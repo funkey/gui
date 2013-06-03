@@ -1,6 +1,7 @@
 #include <cstdlib>
 
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/XInput2.h>
 
 #include <gui/linux/XWindow.h>
 #include <gui/Modifiers.h>
@@ -86,11 +87,45 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	} else
 		LOG_ERROR(xlog) << "[XWindow] could not create input context" << endl;
 
+	// init xinput2
+
+	int event, error;
+	if (!XQueryExtension(_display, "XInputExtension", &_xinputOpcode, &event, &error)) {
+
+		LOG_ERROR(xlog) << "[XWindow] [" << getCaption() << "] no xinput extension available!" << std::endl;
+	}
+
+	// query version of xinput
+	int major = 2, minor = 0;
+	if (XIQueryVersion(_display, &major, &minor) == BadRequest) {
+
+		LOG_ERROR(xlog) << "[XWindow] [" << getCaption() << "] XI2 not available. Server supports " << major << "." << minor << std::endl;
+	}
+
+	// register for events
+	XIEventMask eventmask;
+
+	eventmask.deviceid = XIAllDevices;
+	eventmask.mask_len = XIMaskLen(XI_LASTEVENT);
+	eventmask.mask = (unsigned char*)calloc(eventmask.mask_len, sizeof(unsigned char));
+	/* now set the mask */
+	XISetMask(eventmask.mask, XI_TouchBegin);
+	XISetMask(eventmask.mask, XI_TouchUpdate);
+	XISetMask(eventmask.mask, XI_TouchEnd);
+	XISetMask(eventmask.mask, XI_ButtonPress);
+	XISetMask(eventmask.mask, XI_ButtonRelease);
+	XISetMask(eventmask.mask, XI_Motion);
+
+	/* select on the window */
+	XISelectEvents(_display, _window, &eventmask, 1);
+
 	// now we are ready to show the window
 	LOG_ALL(xlog) << "[XWindow] mapping window" << endl;
 
 	XMapWindow(_display, _window);
 	XFlush(_display);
+
+	free(eventmask.mask);
 
 	LOG_ALL(xlog) << "[XWindow] initialized" << endl;
 }
@@ -190,129 +225,182 @@ XWindow::processEvents() {
 
 		XNextEvent(_display, &event);
 
-		switch (event.type) {
+		if (event.xcookie.type == GenericEvent &&
+		    event.xcookie.extension == _xinputOpcode &&
+		    XGetEventData(_display, &event.xcookie)) {
 
-			case ConfigureNotify:
-				// resize
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a configure notification" << endl;
-				processResizeEvent(event.xconfigure.width, event.xconfigure.height);
-				setDirty();
-				break;
+			XIDeviceEvent* deviceEvent = (XIDeviceEvent*)event.xcookie.data;
+			double* val = deviceEvent->valuators.values;
 
-			case Expose:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received an expose notification" << endl;
-				setDirty();
-				break;
 
-			case ClientMessage:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a client message" << endl;
-				if (event.xclient.data.l[0] == _deleteWindow) {
+			LOG_ALL(xlog) << "[XWindow] detail: " << deviceEvent->detail << std::endl;
+			for (unsigned int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
+				if (XIMaskIsSet(deviceEvent->valuators.mask, i))
+					LOG_ALL(xlog) << "[XWindow] " << i << ": " << *val++ << std::endl;
+
+			switch (event.xcookie.evtype) {
+
+				case XI_TouchBegin:
+
+					LOG_ALL(xlog) << "[XWindow] received xinput2 touch begin event from device "
+					              << deviceEvent->deviceid << ", source "
+					              << deviceEvent->sourceid  <<  " at "
+					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					break;
+
+				case XI_TouchUpdate:
+
+					LOG_ALL(xlog) << "[XWindow] received xinput2 touch update event from device "
+					              << deviceEvent->deviceid << ", source "
+					              << deviceEvent->sourceid  << " at "
+					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					break;
+
+				case XI_TouchEnd:
+
+					LOG_ALL(xlog) << "[XWindow] received xinput2 touch end event from device "
+					              << deviceEvent->deviceid << ", source "
+					              << deviceEvent->sourceid  << " at "
+					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					break;
+
+				case XI_ButtonPress:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a button press notification" << endl;
+
+					button    = buttonToButton(deviceEvent->detail);
+					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+
+					processButtonDownEvent(
+							button,
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+					break;
+
+				case XI_ButtonRelease:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a button release notification" << endl;
+
+					button    = buttonToButton(deviceEvent->detail);
+					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+
+					processButtonUpEvent(
+							button,
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+					break;
+
+				case XI_Motion:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a motion notification" << endl;
+
+					modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+
+					processMouseMoveEvent(
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+					break;
+
+					LOG_ALL(xlog) << "[XWindow] received xinput2 event from device "
+					              << deviceEvent->deviceid << ", source "
+					              << deviceEvent->sourceid  << " at  "
+					              << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+					break;
+
+				default:
+					LOG_ALL(xlog) << "[XWindow] received unknown xinput2 event" << std::endl;
+					break;
+			}
+
+		} else {
+
+			switch (event.type) {
+
+				case ConfigureNotify:
+					// resize
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a configure notification" << endl;
+					processResizeEvent(event.xconfigure.width, event.xconfigure.height);
+					setDirty();
+					break;
+
+				case Expose:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received an expose notification" << endl;
+					setDirty();
+					break;
+
+				case ClientMessage:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a client message" << endl;
+					if (event.xclient.data.l[0] == _deleteWindow) {
+
+						processCloseEvent();
+
+						// there is no need to process further events
+						return;
+					}
+
+					break;
+
+				case DestroyNotify:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a destroy notification" << endl;
 
 					processCloseEvent();
 
 					// there is no need to process further events
 					return;
-				}
 
-				break;
+				case KeyPress:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a key press notification" << endl;
 
-			case DestroyNotify:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a destroy notification" << endl;
+					key       = keycodeToKey(event.xkey.keycode);
+					modifiers = stateToModifiers(event.xkey.state);
 
-				processCloseEvent();
+					processKeyDownEvent(key, modifiers);
 
-				// there is no need to process further events
-				return;
+					break;
 
-			case KeyPress:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a key press notification" << endl;
+				case KeyRelease:
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a key release notification" << endl;
 
-				key       = keycodeToKey(event.xkey.keycode);
-				modifiers = stateToModifiers(event.xkey.state);
+					key       = keycodeToKey(event.xkey.keycode);
+					modifiers = stateToModifiers(event.xkey.state);
 
-				processKeyDownEvent(key, modifiers);
+					processKeyUpEvent(key, modifiers);
 
-				break;
+					break;
 
-			case KeyRelease:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a key release notification" << endl;
+				case EnterNotify:
+					break;
 
-				key       = keycodeToKey(event.xkey.keycode);
-				modifiers = stateToModifiers(event.xkey.state);
+				case LeaveNotify:
+					break;
 
-				processKeyUpEvent(key, modifiers);
+				case FocusIn:
+					break;
 
-				break;
+				case FocusOut:
+					break;
 
-			case ButtonPress:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a button press notification" << endl;
+				case UnmapNotify:
+					break;
 
-				button    = buttonToButton(event.xbutton.button);
-				modifiers = stateToModifiers(event.xbutton.state);
+				case MapNotify:
+					break;
 
-				processButtonDownEvent(
-						button,
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
-
-				break;
-
-			case ButtonRelease:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a button release notification" << endl;
-
-				button    = buttonToButton(event.xbutton.button);
-				modifiers = stateToModifiers(event.xbutton.state);
-
-				processButtonUpEvent(
-						button,
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
-
-				break;
-
-			case MotionNotify:
-				LOG_ALL(xlog) << "[XWindow] window "
-				              << " received a mouse motion notification" << endl;
-
-				modifiers = stateToModifiers(event.xbutton.state);
-
-				processMouseMoveEvent(
-						point<double>(event.xbutton.x, event.xbutton.y),
-						modifiers);
-
-				break;
-
-			case EnterNotify:
-				break;
-
-			case LeaveNotify:
-				break;
-
-			case FocusIn:
-				break;
-
-			case FocusOut:
-				break;
-
-			case UnmapNotify:
-				break;
-
-			case MapNotify:
-				break;
-
-			default:
-				LOG_ERROR(xlog) << "[XWindow] window "
-				                << " received unknown event notification: "
-				                << event.type << endl;
-				break;
+				default:
+					LOG_ERROR(xlog) << "[XWindow] window "
+									<< " received unknown event notification: "
+									<< event.type << endl;
+					break;
+			}
 		}
 	}
 
@@ -520,10 +608,10 @@ XWindow::buttonToButton(unsigned int xbutton) {
 			return buttons::Left;
 
 		case 2:
-			return buttons::Right;
+			return buttons::Middle;
 
 		case 3:
-			return buttons::Middle;
+			return buttons::Right;
 
 		case 4:
 			return buttons::WheelUp;

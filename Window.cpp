@@ -298,6 +298,12 @@ Window::onSizeChanged(const SizeChanged& signal) {
 }
 
 void
+Window::onContentChanged(const ContentChanged& signal) {
+
+	setDirty();
+}
+
+void
 Window::processCloseEvent(){
 
 	LOG_DEBUG(winlog) << "[" << getCaption() << "] invalidating my GlContext" << endl;

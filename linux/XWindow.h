@@ -107,6 +107,9 @@ private:
 	// the X11 input context
 	XIC      _inputContext;
 
+	// the opcode for xinput2 events
+	int      _xinputOpcode;
+
 	// was closed
 	bool     _closed;
 
