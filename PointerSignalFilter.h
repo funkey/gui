@@ -1,6 +1,8 @@
 #ifndef GUI_POINTER_SIGNAL_FILTER_H__
 #define GUI_POINTER_SIGNAL_FILTER_H__
 
+#include <pipeline/all.h>
+
 #include "FingerSignals.h"
 #include "PenSignals.h"
 #include "MouseSignals.h"
@@ -11,29 +13,7 @@ class PointerSignalFilter {
 
 public:
 
-	template <typename OutType, typename InType>
-	void filterBackward(OutType& output, InType& input, pipeline::ProcessNode* processNode) {
-
-		output.registerForwardCallback(boost::function<void(FingerUp&)>(boost::bind(&PointerSignalFilter::onFingerUp,   this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(FingerDown&)>(boost::bind(&PointerSignalFilter::onFingerDown, this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(FingerMove&)>(boost::bind(&PointerSignalFilter::onFingerMove, this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(PenUp&)>(boost::bind(&PointerSignalFilter::onPenUp,   this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(PenDown&)>(boost::bind(&PointerSignalFilter::onPenDown, this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(PenMove&)>(boost::bind(&PointerSignalFilter::onPenMove, this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(MouseUp&)>(boost::bind(&PointerSignalFilter::onMouseUp,   this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(MouseDown&)>(boost::bind(&PointerSignalFilter::onMouseDown, this, _1)), processNode);
-		output.registerForwardCallback(boost::function<void(MouseMove&)>(boost::bind(&PointerSignalFilter::onMouseMove, this, _1)), processNode);
-
-		input.registerBackwardSlot(_fingerUp);
-		input.registerBackwardSlot(_fingerDown);
-		input.registerBackwardSlot(_fingerMove);
-		input.registerBackwardSlot(_penUp);
-		input.registerBackwardSlot(_penDown);
-		input.registerBackwardSlot(_penMove);
-		input.registerBackwardSlot(_mouseUp);
-		input.registerBackwardSlot(_mouseDown);
-		input.registerBackwardSlot(_mouseMove);
-	}
+	void filterBackward(pipeline::OutputBase& output, pipeline::InputBase& input, pipeline::ProcessNode* processNode);
 
 protected:
 
@@ -48,65 +28,26 @@ protected:
 
 private:
 
-	void onFingerUp(FingerUp& signal) {
+	void onFingerUp(FingerUp& signal);
 
-		filterSignal(signal, _fingerUp);
-	}
+	void onFingerDown(FingerDown& signal);
 
-	void onFingerDown(FingerDown& signal) {
+	void onFingerMove(FingerMove& signal);
 
-		filterSignal(signal, _fingerDown);
-	}
+	void onPenUp(PenUp& signal);
 
-	void onFingerMove(FingerMove& signal) {
+	void onPenDown(PenDown& signal);
 
-		filterSignal(signal, _fingerMove);
-	}
+	void onPenMove(PenMove& signal);
 
-	void onPenUp(PenUp& signal) {
+	void onMouseUp(MouseUp& signal);
 
-		filterSignal(signal, _penUp);
-	}
+	void onMouseDown(MouseDown& signal);
 
-	void onPenDown(PenDown& signal) {
-
-		filterSignal(signal, _penDown);
-	}
-
-	void onPenMove(PenMove& signal) {
-
-		LOG_DEBUG(logger::out) << "[PointerSignalFilter] received pen move signal" << std::endl;
-		filterSignal(signal, _penMove);
-	}
-
-	void onMouseUp(MouseUp& signal) {
-
-		filterSignal(signal, _mouseUp);
-	}
-
-	void onMouseDown(MouseDown& signal) {
-
-		filterSignal(signal, _mouseDown);
-	}
-
-	void onMouseMove(MouseMove& signal) {
-
-		filterSignal(signal, _mouseMove);
-	}
+	void onMouseMove(MouseMove& signal);
 
 	template <typename SignalType>
-	void filterSignal(SignalType& signal, signals::Slot<SignalType>& slot) {
-
-		LOG_DEBUG(logger::out) << "[PointerSignalFilter] trying to filter signal " << typeName(signal) << " at " << signal.position << std::endl;
-
-		if (signal.processed)
-			return;
-		LOG_DEBUG(logger::out) << "[PointerSignalFilter] filtering signal " << typeName(signal) << " at " << signal.position << std::endl;
-		filter(signal);
-		LOG_DEBUG(logger::out) << "[PointerSignalFilter] filtered, signal is now " << typeName(signal) << " at " << signal.position << std::endl;
-
-		slot(signal);
-	}
+	void filterSignal(SignalType& signal, signals::Slot<SignalType>& slot);
 
 	signals::Slot<FingerUp>   _fingerUp;
 	signals::Slot<FingerDown> _fingerDown;
