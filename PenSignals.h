@@ -15,8 +15,12 @@ public:
 		pressure(0.75),
 		modifiers(NoModifier) {}
 
-	PenSignal(const util::point<double>& position_, double pressure_, const Modifiers& modifiers_) :
-		PointerSignal(position_),
+	PenSignal(
+			unsigned long timestamp,
+			const util::point<double>& position_,
+			double pressure_,
+			const Modifiers& modifiers_) :
+		PointerSignal(timestamp, position_),
 		pressure(pressure_),
 		modifiers(modifiers_) {}
 
@@ -32,11 +36,11 @@ public:
 	PenMove() {}
 
 	PenMove(
+			unsigned long timestamp,
 			const util::point<double>& position,
 			double pressure,
 			const Modifiers& modifiers) :
-
-		PenSignal(position, pressure, modifiers) {}
+		PenSignal(timestamp, position, pressure, modifiers) {}
 };
 
 class PenDown : public PenSignal {
@@ -47,12 +51,12 @@ public:
 		button(buttons::NoButton) {}
 
 	PenDown(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			double pressure,
 			const Modifiers& modifiers) :
-
-		PenSignal(position, pressure, modifiers),
+		PenSignal(timestamp, position, pressure, modifiers),
 		button(button_) {}
 
 	buttons::Button button;
@@ -65,16 +69,45 @@ public:
 	PenUp() {}
 
 	PenUp(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			double pressure,
 			const Modifiers& modifiers) :
-
-		PenSignal(position, pressure, modifiers),
+		PenSignal(timestamp, position, pressure, modifiers),
 		button(button_) {}
 
 	buttons::Button button;
 };
+
+class PenIn : public PenSignal {
+
+public:
+
+	PenIn() {}
+
+	PenIn(unsigned long timestamp) :
+		PenSignal(
+				timestamp,
+				util::point<double>(0, 0),
+				0,
+				gui::NoModifier) {}
+};
+
+class PenOut : public PenSignal {
+
+public:
+
+	PenOut() {}
+
+	PenOut(unsigned long timestamp) :
+		PenSignal(
+				timestamp,
+				util::point<double>(0, 0),
+				0,
+				gui::NoModifier) {}
+};
+
 
 } // namespace gui
 

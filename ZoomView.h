@@ -53,9 +53,26 @@ private:
 
 	void onKeyDown(KeyDown& signal);
 
+	void onPenMove(const PenMove& signal);
+
+	void onPenIn(const PenIn& signal);
+
+	void onPenOut(const PenOut& signal);
+
 	void onFingerDown(const FingerDown& signal);
 
 	void onFingerMove(const FingerMove& signal);
+
+	void onFingerUp(const FingerUp& signal);
+
+	double getFingerDistance();
+
+	/**
+	 * Returns true if there was recent pen activity.
+	 */
+	bool locked(unsigned long now, const util::point<double>& position);
+
+	util::point<double> getFingerCenter();
 
 	// input/output
 	pipeline::Input<Painter>      _content;
@@ -72,8 +89,14 @@ private:
 	// the speed of zooming
 	double _zoomStep;
 
-	// remember the last mouse position
-	util::point<double> _fingerDown;
+	// remember the last position of each finger
+	std::map<int, FingerSignal> _fingerDown;
+
+	// is the pen in the proximity of the screen?
+	bool _penClose;
+
+	// the last known position of the pen
+	util::point<double> _lastPen;
 
 	// automatically scale content to fit the desired size (which can be given 
 	// on construction or set via a resize signal)

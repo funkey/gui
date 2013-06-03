@@ -14,8 +14,11 @@ public:
 	MouseSignal() :
 		modifiers(NoModifier) {}
 
-	MouseSignal(const util::point<double>& position_, const Modifiers& modifiers_) :
-		PointerSignal(position_),
+	MouseSignal(
+			unsigned long timestamp,
+			const util::point<double>& position_,
+			const Modifiers& modifiers_) :
+		PointerSignal(timestamp, position_),
 		modifiers(modifiers_) {}
 
 	Modifiers modifiers;
@@ -28,10 +31,10 @@ public:
 	MouseMove() {}
 
 	MouseMove(
+			unsigned long timestamp,
 			const util::point<double>& position,
 			const Modifiers& modifiers) :
-
-		MouseSignal(position, modifiers) {}
+		MouseSignal(timestamp, position, modifiers) {}
 };
 
 class MouseDown : public MouseSignal {
@@ -42,11 +45,11 @@ public:
 		button(buttons::NoButton) {}
 
 	MouseDown(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			const Modifiers& modifiers) :
-
-		MouseSignal(position, modifiers),
+		MouseSignal(timestamp, position, modifiers),
 		button(button_) {}
 
 	buttons::Button button;
@@ -59,11 +62,11 @@ public:
 	MouseUp() {}
 
 	MouseUp(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			const Modifiers& modifiers) :
-
-		MouseSignal(position, modifiers),
+		MouseSignal(timestamp, position, modifiers),
 		button(button_) {}
 
 	buttons::Button button;

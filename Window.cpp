@@ -43,6 +43,8 @@ Window::Window(
 	_painter.registerBackwardSlot(_penMove);
 	_painter.registerBackwardSlot(_penDown);
 	_painter.registerBackwardSlot(_penUp);
+	_painter.registerBackwardSlot(_penIn);
+	_painter.registerBackwardSlot(_penOut);
 	_painter.registerBackwardSlot(_mouseMove);
 	_painter.registerBackwardSlot(_mouseDown);
 	_painter.registerBackwardSlot(_mouseUp);
@@ -146,96 +148,119 @@ Window::processKeyDownEvent(const keys::Key& key, const Modifiers& modifiers) {
 
 bool
 Window::processFingerUpEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		int                        id,
 		const Modifiers&           modifiers) {
 
-	FingerUp signal(button, position, id, modifiers);
+	FingerUp signal(timestamp, button, position, id, modifiers);
 	_fingerUp(signal);
 }
 
 bool
 Window::processFingerDownEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		int                        id,
 		const Modifiers&           modifiers) {
 
-	FingerDown signal(button, position, id, modifiers);
+	FingerDown signal(timestamp, button, position, id, modifiers);
 	_fingerDown(signal);
 }
 
 bool
 Window::processFingerMoveEvent(
+		unsigned long              timestamp,
 		const util::point<double>& position,
 		int                        id,
 		const Modifiers&           modifiers) {
 
-	FingerMove signal(position, id, modifiers);
+	FingerMove signal(timestamp, position, id, modifiers);
 	_fingerMove(signal);
 }
 
 bool
 Window::processPenUpEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		double                     pressure,
 		const Modifiers&           modifiers) {
 
-	PenUp signal(button, position, pressure, modifiers);
+	PenUp signal(timestamp, button, position, pressure, modifiers);
 	_penUp(signal);
 }
 
 bool
 Window::processPenDownEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		double                     pressure,
 		const Modifiers&           modifiers) {
 
-	PenDown signal(button, position, pressure, modifiers);
+	PenDown signal(timestamp, button, position, pressure, modifiers);
 	_penDown(signal);
 }
 
 bool
 Window::processPenMoveEvent(
+		unsigned long              timestamp,
 		const util::point<double>& position,
 		double                     pressure,
 		const Modifiers&           modifiers) {
 
 	LOG_ALL(winlog) << "[Window] sending signal pen move" << std::endl;
 
-	PenMove signal(position, pressure, modifiers);
+	PenMove signal(timestamp, position, pressure, modifiers);
 	_penMove(signal);
 }
 
 bool
+Window::processPenInEvent(unsigned long timestamp) {
+
+	PenIn signal(timestamp);
+	_penIn(signal);
+}
+
+bool
+Window::processPenOutEvent(unsigned long timestamp) {
+
+	PenOut signal(timestamp);
+	_penOut(signal);
+}
+
+bool
 Window::processButtonUpEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		const Modifiers&           modifiers) {
 
-	MouseUp signal(button, position, modifiers);
+	MouseUp signal(timestamp, button, position, modifiers);
 	_mouseUp(signal);
 }
 
 bool
 Window::processButtonDownEvent(
+		unsigned long              timestamp,
 		const buttons::Button&     button,
 		const util::point<double>& position,
 		const Modifiers&           modifiers) {
 
-	MouseDown signal(button, position, modifiers);
+	MouseDown signal(timestamp, button, position, modifiers);
 	_mouseDown(signal);
 }
 
 bool
 Window::processMouseMoveEvent(
+		unsigned long              timestamp,
 		const util::point<double>& position,
 		const Modifiers&           modifiers) {
 
-	MouseMove signal(position, modifiers);
+	MouseMove signal(timestamp, position, modifiers);
 	_mouseMove(signal);
 }
 

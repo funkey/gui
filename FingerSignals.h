@@ -15,8 +15,12 @@ public:
 		id(0),
 		modifiers(NoModifier) {}
 
-	FingerSignal(const util::point<double>& position_, int id_, const Modifiers& modifiers_) :
-		PointerSignal(position_),
+	FingerSignal(
+			unsigned long timestamp,
+			const util::point<double>& position_,
+			int id_,
+			const Modifiers& modifiers_) :
+		PointerSignal(timestamp, position_),
 		id(id_),
 		modifiers(modifiers_) {}
 
@@ -32,11 +36,11 @@ public:
 	FingerMove() {}
 
 	FingerMove(
+			unsigned long timestamp,
 			const util::point<double>& position,
 			int id,
 			const Modifiers& modifiers) :
-
-		FingerSignal(position, id, modifiers) {}
+		FingerSignal(timestamp, position, id, modifiers) {}
 };
 
 class FingerDown : public FingerSignal {
@@ -47,12 +51,12 @@ public:
 		button(buttons::NoButton) {}
 
 	FingerDown(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			int id,
 			const Modifiers& modifiers) :
-
-		FingerSignal(position, id, modifiers),
+		FingerSignal(timestamp, position, id, modifiers),
 		button(button_) {}
 
 	buttons::Button button;
@@ -65,12 +69,12 @@ public:
 	FingerUp() {}
 
 	FingerUp(
+			unsigned long timestamp,
 			const buttons::Button& button_,
 			const util::point<double>& position,
 			int id,
 			const Modifiers& modifiers) :
-
-		FingerSignal(position, id, modifiers),
+		FingerSignal(timestamp, position, id, modifiers),
 		button(button_) {}
 
 	buttons::Button button;

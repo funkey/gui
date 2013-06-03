@@ -118,9 +118,14 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	XISetMask(eventmask.mask, XI_ButtonPress);
 	XISetMask(eventmask.mask, XI_ButtonRelease);
 	XISetMask(eventmask.mask, XI_Motion);
+	XISetMask(eventmask.mask, XI_PropertyEvent);
 
 	/* select on the window */
 	XISelectEvents(_display, _window, &eventmask, 1);
+
+	// get the X atom for Wacom serial ID properties -- they tell us whether the 
+	// pen is in proximity
+	_serialIdsProperty = XInternAtom(_display, "Wacom Serial IDs", false);
 
 	// now we are ready to show the window
 	LOG_ALL(xlog) << "[XWindow] mapping window" << endl;
@@ -232,6 +237,12 @@ XWindow::processEvents() {
 		    event.xcookie.extension == _xinputOpcode &&
 		    XGetEventData(_display, &event.xcookie)) {
 
+			if (event.xcookie.evtype == XI_PropertyEvent) {
+
+				processPropertyEvent((XIPropertyEvent*)event.xcookie.data);
+				continue;
+			}
+
 			XIDeviceEvent* deviceEvent = (XIDeviceEvent*)event.xcookie.data;
 			double* val = deviceEvent->valuators.values;
 
@@ -250,7 +261,10 @@ XWindow::processEvents() {
 
 				case XI_TouchBegin:
 
+					LOG_DEBUG(xlog) << "[XWindow] finger down" << std::endl;
+
 					processFingerDownEvent(
+								deviceEvent->time,
 								button,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								deviceEvent->detail,
@@ -259,7 +273,10 @@ XWindow::processEvents() {
 
 				case XI_TouchUpdate:
 
+					LOG_DEBUG(xlog) << "[XWindow] finger moved" << std::endl;
+
 					processFingerMoveEvent(
+								deviceEvent->time,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								deviceEvent->detail,
 								modifiers);
@@ -267,7 +284,10 @@ XWindow::processEvents() {
 
 				case XI_TouchEnd:
 
+					LOG_DEBUG(xlog) << "[XWindow] finger up" << std::endl;
+
 					processFingerUpEvent(
+								deviceEvent->time,
 								button,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								deviceEvent->detail,
@@ -282,6 +302,7 @@ XWindow::processEvents() {
 					if (inputType == Mouse) {
 
 						processButtonDownEvent(
+								deviceEvent->time,
 								button,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								modifiers);
@@ -289,6 +310,7 @@ XWindow::processEvents() {
 					} else if (inputType == Pen) {
 
 						processPenDownEvent(
+								deviceEvent->time,
 								button,
 								getPenPosition(deviceEvent),
 								getPressure(deviceEvent),
@@ -305,6 +327,7 @@ XWindow::processEvents() {
 					if (inputType == Mouse) {
 
 						processButtonUpEvent(
+								deviceEvent->time,
 								button,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								modifiers);
@@ -312,6 +335,7 @@ XWindow::processEvents() {
 					} else if (inputType == Pen) {
 
 						processPenUpEvent(
+								deviceEvent->time,
 								button,
 								getPenPosition(deviceEvent),
 								getPressure(deviceEvent),
@@ -327,12 +351,14 @@ XWindow::processEvents() {
 					if (inputType == Mouse) {
 
 						processMouseMoveEvent(
+								deviceEvent->time,
 								point<double>(deviceEvent->event_x, deviceEvent->event_y),
 								modifiers);
 
 					} else if (inputType == Pen) {
 
 						processPenMoveEvent(
+								deviceEvent->time,
 								getPenPosition(deviceEvent),
 								getPressure(deviceEvent),
 								modifiers);
@@ -442,6 +468,57 @@ XWindow::processEvents() {
 
 		redraw();
 	}
+}
+
+void
+XWindow::processPropertyEvent(XIPropertyEvent* propertyEvent) {
+
+	LOG_ALL(xlog) << "device " << propertyEvent->deviceid << " changed" << std::endl;
+	LOG_ALL(xlog) << "\tatom: " << XGetAtomName(_display, propertyEvent->property) << ", what: " << propertyEvent->what << std::endl;
+
+	// we're only interested in the serial IDs
+	if (propertyEvent->property != _serialIdsProperty)
+		return;
+
+	// get the property data
+	unsigned char* data;
+	Atom actualType;
+	int actualFormat;
+	unsigned long numItems, bytesAfter;
+	if (!XIGetProperty(
+			_display,
+			propertyEvent->deviceid,
+			propertyEvent->property,
+			0,     /* offset */
+			1000,  /* length */
+			false, /* delete property */
+			AnyPropertyType,
+			&actualType,
+			&actualFormat,
+			&numItems,
+			&bytesAfter,
+			&data) == Success) {
+
+		LOG_ERROR(xlog) << "couldn't read property " << XGetAtomName(_display, propertyEvent->property) << std::endl;
+		return;
+	}
+
+	// the third number is the current serial number -- 0, if no pen present
+	unsigned char* ptr = data + actualFormat/8 * 3;
+	int currentSerialNumber = *((int32_t*)ptr);
+
+	if (currentSerialNumber == 0)
+		processPenOutEvent(propertyEvent->time);
+	else
+		processPenInEvent(propertyEvent->time);
+
+	// show all the other items
+	//for (int i = 0; i < numItems; i++) {
+
+		//ptr = data + actualFormat/8 * i;
+		//int d = *((int32_t*)ptr);
+		//LOG_DEBUG(xlog) << "property data item " << i << ": " << d << std::endl;
+	//}
 }
 
 void

@@ -63,9 +63,16 @@ class InputSignal : public GuiSignal {
 public:
 
 	InputSignal() :
-		processed(false) {}
+		processed(false),
+		timestamp(0) {}
+
+	InputSignal(unsigned long timestamp_) :
+		processed(false),
+		timestamp(timestamp_) {}
 
 	bool processed;
+
+	unsigned long timestamp;
 };
 
 } // namespace gui

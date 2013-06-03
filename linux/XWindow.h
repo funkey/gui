@@ -87,6 +87,11 @@ private:
 	void restoreVideoMode();
 
 	/**
+	 * Process a xinput2 property change event.
+	 */
+	void processPropertyEvent(XIPropertyEvent* propertyEvent);
+
+	/**
 	 * Converts an X keycode to a Key.
 	 */
 	keys::Key keycodeToKey(unsigned int keycode);
@@ -155,6 +160,9 @@ private:
 	double _penSlopeY;
 	double _penOffsetX;
 	double _penOffsetY;
+
+	// the X11 atom for the wacom id property
+	Atom _serialIdsProperty;
 };
 
 } // namespace gui

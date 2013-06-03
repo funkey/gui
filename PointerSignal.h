@@ -15,7 +15,8 @@ public:
 	PointerSignal() :
 		position(0, 0) {}
 
-	PointerSignal(const util::point<double>& position_) :
+	PointerSignal(unsigned long timestamp, const util::point<double>& position_) :
+		InputSignal(timestamp),
 		position(position_) {}
 
 	util::point<double> position;
