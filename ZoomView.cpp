@@ -96,6 +96,8 @@ void
 ZoomView::onContentChanged(const ContentChanged& signal) {
 
 	_contentChanged();
+
+	setDirty(_zoomed);
 }
 
 void
