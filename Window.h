@@ -112,6 +112,11 @@ private:
 	void onSizeChanged(const SizeChanged& signal);
 
 	/**
+	 * Pipeline callback for content change signals from the painter.
+	 */
+	void onContentChanged(const ContentChanged& signal);
+
+	/**
 	 * Callback for top-down resize events.
 	 */
 	void processResizeEvent(int width, int height);

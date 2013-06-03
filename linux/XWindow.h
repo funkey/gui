@@ -1,12 +1,11 @@
 #ifndef X_WINDOW_H__
 #define X_WINDOW_H__
 
+#include <map>
 #include <string>
 
 #include <X11/Xlib.h>
-#include <X11/Xlib-xcb.h>
-#include <xcb/xcb.h>
-#include <GL/glx.h>
+#include <X11/extensions/XInput2.h>
 
 #include <gui/WindowBase.h>
 #include <gui/WindowMode.h>
@@ -55,22 +54,37 @@ public:
 	void processEvents();
 
 	/**
-	 * Process access to the X11 display to create and manage an OpenGl context.
+	 * Provides access to the X11 display to create an OpenGl context.
 	 */
-	Display* getDisplay() { return _display; }
+	Display* getDisplay() { return _display; };
 
 	/**
-	 * Provides access to the xcb window to create an OpenGl context.
+	 * Provides access to the X11 window to create an OpenGl context.
 	 */
-	xcb_window_t* getXcbWindow() { return &_xcbWindow; }
-
-	/**
-	 * Provides access to the frame-buffer configuration of this window to 
-	 * create an OpenGl context.
-	 */
-	GLXFBConfig* getFbConfig() { return &_fbConfig; }
+	::Window getX11Window() { return _window; };
 
 private:
+
+	/**
+	 * Classification of input devices.
+	 */
+	enum InputType {
+
+		Mouse,
+		Pen,
+		Touch
+	};
+
+	/**
+	 * Finds the closes fullscreen resolution to the one given in mode and
+	 * switches to it.
+	 */
+	void setupFullscreen(const WindowMode& mode);
+
+	/**
+	 * Restore the video mode that we had before we changed it.
+	 */
+	void restoreVideoMode();
 
 	/**
 	 * Converts an X keycode to a Key.
@@ -85,34 +99,62 @@ private:
 	/**
 	 * Converts an X button to a Button.
 	 */
-	buttons::Button buttonToButton(const xcb_button_t& xbutton);
+	buttons::Button buttonToButton(unsigned int xbutton);
+
+	/**
+	 * Determine the input type given a device id.
+	 */
+	InputType getInputType(int deviceid);
+
+	/**
+	 * Transform the pen device coordinates to screen coordinates according to 
+	 * the calibration.
+	 */
+	util::point<double> getPenPosition(XIDeviceEvent* event);
+
+	/**
+	 * Assuming the input device is a pen, get the pressure level.
+	 */
+	double getPressure(XIDeviceEvent* event);
 
 	// the X11 display
 	Display* _display;
 
 	// the X11 screen
-	int _screen;
+	int      _screen;
 
-	// the xcb connection
-	xcb_connection_t* _xcbConnection;
+	// the X11 window
+	::Window _window;
 
-	// the xcb screen
-	xcb_screen_t* _xcbScreen;
+	// the X11 atom for delete window events
+	Atom     _deleteWindow;
 
-	// the glx frame-buffer configuration for this window
-	GLXFBConfig _fbConfig;
+	// the X11 input method
+	XIM      _inputMethod;
 
-	// the xcb window
-	xcb_window_t _xcbWindow;
+	// the X11 input context
+	XIC      _inputContext;
 
-	// atom for client delete events
-	xcb_intern_atom_reply_t* _deleteReply;
-
-	// is visible
-	bool _visible;
+	// the opcode for xinput2 events
+	int      _xinputOpcode;
 
 	// was closed
-	bool _closed;
+	bool     _closed;
+
+	// is this window running in fullscreen?
+	bool     _fullscreen;
+
+	// the video mode before the swith to fullscreen
+	int      _previousMode;
+
+	// map from device ID to input type
+	std::map<int, InputType> _inputTypes;
+
+	// calibration for the pen
+	double _penSlopeX;
+	double _penSlopeY;
+	double _penOffsetX;
+	double _penOffsetY;
 };
 
 } // namespace gui
