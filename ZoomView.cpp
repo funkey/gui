@@ -196,8 +196,6 @@ ZoomView::onFingerMove(const FingerMove& signal) {
 	if (_fingerDown.size() > 2)
 		return;
 
-	LOG_ALL(zoomviewlog) << "I am in zooming mode (number of fingers down == 2)" << std::endl;
-
 	// get the moving finger
 	std::map<int, FingerSignal>::iterator i = _fingerDown.find(signal.id);
 	if (i == _fingerDown.end()) {
@@ -216,8 +214,12 @@ ZoomView::onFingerMove(const FingerMove& signal) {
 	double previousDistance = 0;
 	if (_fingerDown.size() == 2) {
 
+		LOG_ALL(zoomviewlog) << "I am in zooming mode (number of fingers down == 2)" << std::endl;
+
 		// the previous distance between the fingers
 		previousDistance = getFingerDistance();
+
+		LOG_ALL(zoomviewlog) << "previous finger distance was " << previousDistance << std::endl;
 	}
 
 	// update remembered position
@@ -234,6 +236,9 @@ ZoomView::onFingerMove(const FingerMove& signal) {
 	if (_fingerDown.size() == 2) {
 
 		double distance = getFingerDistance();
+
+		LOG_ALL(zoomviewlog) << "current finger distance is " << distance << std::endl;
+		LOG_ALL(zoomviewlog) << "zooming by " << (distance/previousDistance) << " with center at " << getFingerCenter() << std::endl;
 
 		_zoomed->zoom(distance/previousDistance, getFingerCenter());
 	}
@@ -267,7 +272,7 @@ ZoomView::getFingerDistance() {
 util::point<double>
 ZoomView::getFingerCenter() {
 
-	util::point<double> center;
+	util::point<double> center(0, 0);
 	for (std::map<int, FingerSignal>::const_iterator i = _fingerDown.begin(); i != _fingerDown.end(); i++)
 		center += i->second.position;
 
