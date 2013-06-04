@@ -7,6 +7,7 @@
 
 #include <gui/OpenGl.h>
 #include <gui/OpenGlTraits.h>
+#include <util/Logger.h>
 
 namespace gui {
 
@@ -66,6 +67,19 @@ public:
 	 */
 	inline GLsizei height() const { return _height; };
 
+	/**
+	 * Map the texture's content to accessible device memory for direct 
+	 * rendering. Don't forget to call unmap() when done.
+	 */
+	template <typename PixelType>
+	PixelType* map();
+
+	/**
+	 * Unmap this texture.
+	 */
+	template <typename PixelType>
+	void unmap(float scale = 1.0f, float bias = 0.0f);
+
 private:
 
 	// the OpenGL target of the texture
@@ -87,46 +101,52 @@ private:
 
 	// the internal OpenGL id of the buffer object
 	GLuint _buf;
+
+	// pointer to the mapped memory of this texture
+	void* _mapped;
 };
 
 /*****************
  * IMPLEMENTAION *
  *****************/
 
-template <typename InputIterator>
-void
-Texture::loadData(InputIterator data, float scale, float bias) {
-
-	// make sure we have a valid OpenGl context
-	OpenGl::Guard guard;
-
-	// get iterator value type (which is the pixel type)
-	typedef typename std::iterator_traits<InputIterator>::value_type pixel_type;
-
-	// get the appropriate OpenGL format and type for this pixel type
-	GLenum format = detail::pixel_format_traits<pixel_type>::gl_format;
-	GLenum type   = detail::pixel_format_traits<pixel_type>::gl_type;
+template <typename PixelType>
+PixelType*
+Texture::map() {
 
 	// bind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
 
 	// discard previous buffer (so we don't have to wait for GPU until we can
 	// map) and create new buffer
-	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, _width*_height*sizeof(pixel_type), 0, GL_DYNAMIC_DRAW));
+	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, _width*_height*sizeof(PixelType), 0, GL_DYNAMIC_DRAW));
 
 	// map the pixel buffer object
-	pixel_type* p = (pixel_type*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+	_mapped = glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 
-	if (p) {
+	return (PixelType*)_mapped;
+}
 
-		// copy the data
-		std::copy(data, data + _width*_height, p);
+template <typename PixelType>
+void
+Texture::unmap(float scale, float bias) {
+
+	// get the appropriate OpenGL format and type for this pixel type
+	GLenum format = detail::pixel_format_traits<PixelType>::gl_format;
+	GLenum type   = detail::pixel_format_traits<PixelType>::gl_type;
+
+	if (_mapped) {
+
+		_mapped = 0;
 
 		// unmap the pixel buffer object
 		glCheck(glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB));
 
 		// bind texture
 		glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
+
+		// bind buffer
+		glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
 
 		// set color/intensity scale and bias
 		glCheck(glPixelTransferf(GL_RED_SCALE,   scale));
@@ -153,6 +173,27 @@ Texture::loadData(InputIterator data, float scale, float bias) {
 
 	// unbind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+}
+
+template <typename InputIterator>
+void
+Texture::loadData(InputIterator data, float scale, float bias) {
+
+	// get iterator value type (which is the pixel type)
+	typedef typename std::iterator_traits<InputIterator>::value_type pixel_type;
+
+	// make sure we have a valid OpenGl context
+	OpenGl::Guard guard;
+
+	pixel_type* p = map<pixel_type>();
+
+	if (p) {
+
+		// copy the data
+		std::copy(data, data + _width*_height, p);
+	}
+
+	unmap<pixel_type>(scale, bias);
 }
 
 } // namespcae gui

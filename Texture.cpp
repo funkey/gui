@@ -9,7 +9,8 @@ Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	_texWidth(1),
 	_texHeight(1),
 	_tex(0),
-	_buf(0) {
+	_buf(0),
+	_mapped(0) {
 
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
