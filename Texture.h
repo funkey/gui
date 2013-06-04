@@ -117,10 +117,6 @@ Texture::map() {
 	// bind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
 
-	// discard previous buffer (so we don't have to wait for GPU until we can
-	// map) and create new buffer
-	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, _width*_height*sizeof(PixelType), 0, GL_DYNAMIC_DRAW));
-
 	// map the pixel buffer object
 	_mapped = glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 

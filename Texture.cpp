@@ -53,6 +53,17 @@ Texture::resize(GLsizei width, GLsizei height) {
 	_width  = width;
 	_height = height;
 
+	// bind buffer
+	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
+
+	// create new buffer
+	unsigned int size = _width*_height;
+	if (_format == GL_RGB)
+		size *= 3;
+	else if (_format == GL_RGBA)
+		size *= 4;
+	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, size, 0, GL_DYNAMIC_DRAW));
+
 	// unbind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
 
