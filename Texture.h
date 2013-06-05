@@ -7,7 +7,8 @@
 
 #include <gui/OpenGl.h>
 #include <gui/OpenGlTraits.h>
-#include <util/Logger.h>
+
+#include "Buffer.h"
 
 namespace gui {
 
@@ -45,9 +46,19 @@ public:
 	void loadData(InputIterator begin, float scale = 1.0f, float bias = 0.0f);
 
 	/**
+	 * Load texture data from a buffer.
+	 */
+	void loadData(const Buffer& buffer, int offsetx, int offsety, float scale = 1.0f, float bias = 0.0f);
+
+	/**
 	 * Bind this texture. Calls glBindTexture().
 	 */
 	void bind();
+
+	/**
+	 * Unbind this texture.
+	 */
+	void unbind();
 
 	/**
 	 * Resize the texture, if needed.

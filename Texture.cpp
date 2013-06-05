@@ -1,4 +1,7 @@
+#include <util/Logger.h>
 #include "Texture.h"
+
+logger::LogChannel texturelog("texturelog", "[Texture] ");
 
 namespace gui {
 
@@ -80,11 +83,66 @@ Texture::resize(GLsizei width, GLsizei height) {
 void
 Texture::bind() {
 
+	// bind texture
+	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
+}
+
+void
+Texture::unbind() {
+
+	// unbind texture
+	glCheck(glBindTexture(GL_TEXTURE_2D, 0));
+}
+
+void
+Texture::loadData(const Buffer& buffer, int xoffset, int yoffset, float scale, float bias) {
+
+	if (buffer.width() > _width - xoffset || buffer.height() > _height - yoffset) {
+
+		LOG_ERROR(texturelog)
+				<< "size of buffer doesn't match size of texture: texture is of size "
+				<< _width << "x" << _height << ", buffer is "
+				<< buffer.width() << "x" << buffer.height()
+				<< " and offset is (" << xoffset << ", " << yoffset << ")" << std::endl;
+		return;
+	}
+
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
 
 	// bind texture
-	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
+	bind();
+
+	// bind buffer
+	buffer.bind();
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   scale));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, scale));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  scale));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    bias));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  bias));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   bias));
+
+	// update texture
+	LOG_ALL(texturelog)
+			<< "updating subimage "
+			<< _width << "x" << _height << ", buffer is "
+			<< buffer.width() << "x" << buffer.height()
+			<< " and offset is (" << xoffset << ", " << yoffset << ")" << std::endl;
+	glCheck(glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, buffer.width(), buffer.height(), buffer.getFormat(), buffer.getType(), 0));
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   1.0));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, 1.0));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  1.0));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    0.0));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  0.0));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   0.0));
+
+	unbind();
+
+	buffer.unbind();
 }
 
 } // namespace gui
