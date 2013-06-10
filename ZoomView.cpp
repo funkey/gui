@@ -8,6 +8,7 @@ static logger::LogChannel zoomviewlog("zoomviewlog", "[ZoomView] ");
 ZoomView::ZoomView(bool autoscale) :
 		_zoomed(boost::make_shared<ZoomPainter>()),
 		_zoomStep(1.1),
+		_dragging(false),
 		_autoscale(autoscale) {
 
 	registerInput(_content, "painter");
@@ -26,12 +27,8 @@ ZoomView::ZoomView(bool autoscale) :
 	_zoomed.registerForwardSlot(_sizeChanged);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onPenMove, this);
-	_zoomed.registerForwardCallback(&ZoomView::onPenIn, this);
-	_zoomed.registerForwardCallback(&ZoomView::onPenOut, this);
-	_zoomed.registerForwardCallback(&ZoomView::onFingerDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onFingerMove, this);
-	_zoomed.registerForwardCallback(&ZoomView::onFingerUp, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
 
 	if (_autoscale) {
 
@@ -43,10 +40,14 @@ ZoomView::ZoomView(bool autoscale) :
 ZoomView::ZoomView(const util::rect<double>& desiredSize) :
 		_zoomed(boost::make_shared<ZoomPainter>()),
 		_zoomStep(1.1),
+		_dragging(false),
 		_autoscale(true) {
 
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");
+
+	// establish pointer signal filter
+	PointerSignalFilter::filterBackward(_zoomed, _content, this);
 
 	_content.registerBackwardSlot(_keyDown);
 	_content.registerBackwardSlot(_keyUp);
@@ -58,8 +59,8 @@ ZoomView::ZoomView(const util::rect<double>& desiredSize) :
 	_zoomed.registerForwardSlot(_sizeChanged);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
 	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onFingerDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onFingerMove, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
+	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
 
 	_zoomed->setAutoscale();
 	_zoomed->setDesiredSize(desiredSize);
@@ -72,7 +73,7 @@ ZoomView::updateOutputs() {
 
 	_zoomed->updateScaleAndShift();
 }
-
+ 
 bool
 ZoomView::filter(PointerSignal& signal) {
 
@@ -100,8 +101,6 @@ void
 ZoomView::onContentChanged(const ContentChanged& signal) {
 
 	_contentChanged();
-
-	setDirty(_zoomed);
 }
 
 void
@@ -159,137 +158,88 @@ ZoomView::onKeyDown(KeyDown& signal) {
 }
 
 void
-ZoomView::onPenMove(const PenMove& signal) {
+ZoomView::onMouseDown(const MouseDown& signal) {
 
-	_lastPen = signal.position;
-}
+	LOG_ALL(zoomviewlog) << "a button was pressed" << std::endl;
 
-void
-ZoomView::onPenIn(const PenIn& signal) {
-
-	_penClose = true;
-}
-
-void
-ZoomView::onPenOut(const PenOut& signal) {
-
-	_penClose = false;
-}
-
-void
-ZoomView::onFingerDown(const FingerDown& signal) {
-
-	LOG_ALL(zoomviewlog) << "a finger was put down (" << _fingerDown.size() << " fingers now)" << std::endl;
+	if (!(signal.modifiers & keys::ControlDown))
+		return;
 
 	util::point<double> position = signal.position;
 
-	_fingerDown[signal.id] = signal;
+	LOG_ALL(zoomviewlog) << "mouse button " << signal.button << " down, position is " << position << std::endl;
 
-	setDirty(_zoomed);
-}
+	if (signal.button == buttons::Left) {
 
-void
-ZoomView::onFingerMove(const FingerMove& signal) {
+		LOG_ALL(zoomviewlog) << "it's the left mouse button -- start dragging mode" << std::endl;
 
-	LOG_ALL(zoomviewlog) << "a finger is moved" << std::endl;
+		_dragging = true;
+		_buttonDown = position;
 
-	if (_fingerDown.size() > 2)
-		return;
-
-	// get the moving finger
-	std::map<int, FingerSignal>::iterator i = _fingerDown.find(signal.id);
-	if (i == _fingerDown.end()) {
-
-		LOG_ERROR(zoomviewlog) << "got a move from unseen finger " << signal.id << std::endl;
 		return;
 	}
 
-	// get the previous position of the finger
-	util::point<double>& previousPosition = i->second.position;
+	// if shift is pressed, increase zoom speed
+	double zoomStep = _zoomStep;
+	if (signal.modifiers & keys::ShiftDown)
+		zoomStep *= 2;
 
-	// determine drag, let each finger contribute with equal weight
-	util::point<double> moved = (1.0/_fingerDown.size())*(signal.position - previousPosition);
+	// mouse wheel up
+	if (signal.button == buttons::WheelUp) {
 
-	// if two fingers are down, perform a zoom
-	double previousDistance = 0;
-	if (_fingerDown.size() == 2) {
+		LOG_ALL(zoomviewlog) << "it's the left wheel up" << std::endl;
 
-		LOG_ALL(zoomviewlog) << "I am in zooming mode (number of fingers down == 2)" << std::endl;
-
-		// the previous distance between the fingers
-		previousDistance = getFingerDistance();
-
-		LOG_ALL(zoomviewlog) << "previous finger distance was " << previousDistance << std::endl;
+		_zoomed->zoom(zoomStep, position);
 	}
 
-	// update remembered position
-	previousPosition = signal.position;
+	// mouse wheel down
+	if (signal.button == buttons::WheelDown) {
 
-	// is there a reason not to accept the drag and zoom?
-	if (locked(signal.timestamp, signal.position))
-		return;
+		LOG_ALL(zoomviewlog) << "it's the left wheel down" << std::endl;
 
-	// set drag
-	_zoomed->drag(moved);
-
-	// set zoom
-	if (_fingerDown.size() == 2) {
-
-		double distance = getFingerDistance();
-
-		LOG_ALL(zoomviewlog) << "current finger distance is " << distance << std::endl;
-		LOG_ALL(zoomviewlog) << "zooming by " << (distance/previousDistance) << " with center at " << getFingerCenter() << std::endl;
-
-		_zoomed->zoom(distance/previousDistance, getFingerCenter());
+		_zoomed->zoom(1.0/zoomStep, position);
 	}
 
 	setDirty(_zoomed);
 }
 
 void
-ZoomView::onFingerUp(const FingerUp& signal) {
+ZoomView::onMouseMove(const MouseMove& signal) {
 
-	std::map<int, FingerSignal>::iterator i = _fingerDown.find(signal.id);
-	if (i != _fingerDown.end())
-		_fingerDown.erase(i);
-}
+	LOG_ALL(zoomviewlog) << "the mouse is moved" << std::endl;
 
-double
-ZoomView::getFingerDistance() {
+	if (!(signal.modifiers & keys::ControlDown))
+		return;
 
-	if (_fingerDown.size() != 2)
-		return 0;
+	if (!_dragging) {
 
-	std::map<int, FingerSignal>::const_iterator i = _fingerDown.begin();
+		return;
+	}
 
-	util::point<double> diff = i->second.position;
-	i++;
-	diff -= i->second.position;
+	LOG_ALL(zoomviewlog) << "I am in dragging mode" << std::endl;
 
-	return sqrt(diff.x*diff.x + diff.y*diff.y);
-}
+	double amp = 1.0;
+	if (signal.modifiers & keys::ShiftDown)
+		amp = 10.0;
 
-util::point<double>
-ZoomView::getFingerCenter() {
+	// mouse is dragged
+	if (signal.modifiers & buttons::LeftDown) {
 
-	util::point<double> center(0, 0);
-	for (std::map<int, FingerSignal>::const_iterator i = _fingerDown.begin(); i != _fingerDown.end(); i++)
-		center += i->second.position;
+		LOG_ALL(zoomviewlog) << "left button is still pressed" << std::endl;
 
-	return center/_fingerDown.size();
-}
+		util::point<double> moved = signal.position - _buttonDown;
 
-bool
-ZoomView::locked(unsigned long now, const util::point<double>& position) {
+		_zoomed->drag(moved*amp);
 
-	// if there is a pen, allow only dragging and moving from an area that is 
-	// clearly not the palm (of a right-handed person)
-	if (_penClose) {
+		_buttonDown = signal.position;
 
-		if (position.x < _lastPen.x)
-			return false;
-		else
-			return true;
+		setDirty(_zoomed);
+
+	} else {
+
+		LOG_ALL(zoomviewlog) << "left button released -- stop dragging" << std::endl;
+
+		_dragging = false;
 	}
 }
 

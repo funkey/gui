@@ -3,10 +3,10 @@
 
 #include <pipeline/all.h>
 #include <gui/ZoomPainter.h>
-#include <gui/FingerSignals.h>
-#include <gui/KeySignals.h>
-#include <gui/Keys.h>
 #include <gui/PointerSignalFilter.h>
+#include <gui/KeySignals.h>
+#include <gui/MouseSignals.h>
+#include <gui/Keys.h>
 #include <util/Logger.h>
 
 namespace gui {
@@ -36,9 +36,6 @@ private:
 
 	void updateOutputs();
 
-	/**
-	 * Filter callback for generic 2D input signals.
-	 */
 	bool filter(PointerSignal& signal);
 
 	void onInputSet(const pipeline::InputSet<Painter>& signal);
@@ -53,26 +50,9 @@ private:
 
 	void onKeyDown(KeyDown& signal);
 
-	void onPenMove(const PenMove& signal);
+	void onMouseDown(const MouseDown& signal);
 
-	void onPenIn(const PenIn& signal);
-
-	void onPenOut(const PenOut& signal);
-
-	void onFingerDown(const FingerDown& signal);
-
-	void onFingerMove(const FingerMove& signal);
-
-	void onFingerUp(const FingerUp& signal);
-
-	double getFingerDistance();
-
-	/**
-	 * Returns true if there was recent pen activity.
-	 */
-	bool locked(unsigned long now, const util::point<double>& position);
-
-	util::point<double> getFingerCenter();
+	void onMouseMove(const MouseMove& signal);
 
 	// input/output
 	pipeline::Input<Painter>      _content;
@@ -81,6 +61,9 @@ private:
 	// backward communications
 	signals::Slot<const KeyDown>          _keyDown;
 	signals::Slot<const KeyUp>            _keyUp;
+	signals::Slot<const MouseDown>        _mouseDown;
+	signals::Slot<const MouseUp>          _mouseUp;
+	signals::Slot<const MouseMove>        _mouseMove;
 
 	// forward communications
 	signals::Slot<const ContentChanged>      _contentChanged;
@@ -89,14 +72,11 @@ private:
 	// the speed of zooming
 	double _zoomStep;
 
-	// remember the last position of each finger
-	std::map<int, FingerSignal> _fingerDown;
+	// remember the last mouse position
+	util::point<double> _buttonDown;
 
-	// is the pen in the proximity of the screen?
-	bool _penClose;
-
-	// the last known position of the pen
-	util::point<double> _lastPen;
+	// indicate that we are in dragging mode
+	bool _dragging;
 
 	// automatically scale content to fit the desired size (which can be given 
 	// on construction or set via a resize signal)
