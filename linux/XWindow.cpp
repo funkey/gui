@@ -261,7 +261,7 @@ XWindow::processEvents() {
 
 				case XI_TouchBegin:
 
-					LOG_DEBUG(xlog) << "[XWindow] finger down" << std::endl;
+					LOG_ALL(xlog) << "[XWindow] finger down" << std::endl;
 
 					processFingerDownEvent(
 								deviceEvent->time,
@@ -273,7 +273,7 @@ XWindow::processEvents() {
 
 				case XI_TouchUpdate:
 
-					LOG_DEBUG(xlog) << "[XWindow] finger moved" << std::endl;
+					LOG_ALL(xlog) << "[XWindow] finger moved" << std::endl;
 
 					processFingerMoveEvent(
 								deviceEvent->time,
@@ -284,7 +284,7 @@ XWindow::processEvents() {
 
 				case XI_TouchEnd:
 
-					LOG_DEBUG(xlog) << "[XWindow] finger up" << std::endl;
+					LOG_ALL(xlog) << "[XWindow] finger up" << std::endl;
 
 					processFingerUpEvent(
 								deviceEvent->time,
@@ -517,7 +517,7 @@ XWindow::processPropertyEvent(XIPropertyEvent* propertyEvent) {
 
 		//ptr = data + actualFormat/8 * i;
 		//int d = *((int32_t*)ptr);
-		//LOG_DEBUG(xlog) << "property data item " << i << ": " << d << std::endl;
+		//LOG_ALL(xlog) << "property data item " << i << ": " << d << std::endl;
 	//}
 }
 
