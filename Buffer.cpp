@@ -13,6 +13,9 @@ Buffer::Buffer(GLsizei width, GLsizei height, GLint format, GLenum type) :
 	// create a pixel buffer object for the buffer
 	glCheck(glGenBuffersARB(1, &_buf));
 
+	if (_buf == 0)
+		BOOST_THROW_EXCEPTION(GuiError() << error_message("buffer id is zero") << STACK_TRACE);
+
 	// resize buffer
 	resize(_width, _height);
 }
