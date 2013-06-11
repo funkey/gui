@@ -53,6 +53,7 @@ Window::Window(
 	_painter.registerBackwardCallback(&Window::onInputAdded, this);
 	_painter.registerBackwardCallback(&Window::onModified, this);
 	_painter.registerBackwardCallback(&Window::onSizeChanged, this);
+	_painter.registerBackwardCallback(&Window::onContentChanged, this);
 
 	// initiate first redraw
 	setDirty();
@@ -408,6 +409,10 @@ Window::onSizeChanged(const SizeChanged& signal) {
 
 void
 Window::onContentChanged(const ContentChanged& signal) {
+
+	LOG_ALL(winlog) << "[" << getCaption() << "] received a content change signal" << endl;
+
+	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
