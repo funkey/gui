@@ -61,6 +61,8 @@ Window::Window(
 
 Window::~Window() {
 
+	gui::OpenGl::Guard guard;
+
 	LOG_DEBUG(winlog) << "[" << getCaption() << "] destructing..." << endl;
 
 	deleteFrameBuffer();
