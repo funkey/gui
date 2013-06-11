@@ -40,6 +40,10 @@ private:
 
 	void onPenMove(PenMove& signal);
 
+	void onPenIn(PenIn& signal);
+
+	void onPenOut(PenOut& signal);
+
 	void onMouseUp(MouseUp& signal);
 
 	void onMouseDown(MouseDown& signal);
@@ -55,6 +59,8 @@ private:
 	signals::Slot<PenUp>      _penUp;
 	signals::Slot<PenDown>    _penDown;
 	signals::Slot<PenMove>    _penMove;
+	signals::Slot<PenIn>      _penIn;
+	signals::Slot<PenOut>     _penOut;
 	signals::Slot<MouseUp>    _mouseUp;
 	signals::Slot<MouseDown>  _mouseDown;
 	signals::Slot<MouseMove>  _mouseMove;

@@ -11,6 +11,8 @@ PointerSignalFilter::filterBackward(pipeline::OutputBase& output, pipeline::Inpu
 	output.registerForwardCallback(boost::function<void(PenUp&)>(boost::bind(&PointerSignalFilter::onPenUp,   this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(PenDown&)>(boost::bind(&PointerSignalFilter::onPenDown, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(PenMove&)>(boost::bind(&PointerSignalFilter::onPenMove, this, _1)), processNode, signals::Transparent);
+	output.registerForwardCallback(boost::function<void(PenIn&)>(boost::bind(&PointerSignalFilter::onPenIn, this, _1)), processNode, signals::Transparent);
+	output.registerForwardCallback(boost::function<void(PenOut&)>(boost::bind(&PointerSignalFilter::onPenOut, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseUp&)>(boost::bind(&PointerSignalFilter::onMouseUp,   this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseDown&)>(boost::bind(&PointerSignalFilter::onMouseDown, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseMove&)>(boost::bind(&PointerSignalFilter::onMouseMove, this, _1)), processNode, signals::Transparent);
@@ -21,6 +23,8 @@ PointerSignalFilter::filterBackward(pipeline::OutputBase& output, pipeline::Inpu
 	input.registerBackwardSlot(_penUp);
 	input.registerBackwardSlot(_penDown);
 	input.registerBackwardSlot(_penMove);
+	input.registerBackwardSlot(_penIn);
+	input.registerBackwardSlot(_penOut);
 	input.registerBackwardSlot(_mouseUp);
 	input.registerBackwardSlot(_mouseDown);
 	input.registerBackwardSlot(_mouseMove);
@@ -60,6 +64,18 @@ void
 PointerSignalFilter::onPenMove(PenMove& signal) {
 
 	filterSignal(signal, _penMove);
+}
+
+void
+PointerSignalFilter::onPenIn(PenIn& signal) {
+
+	filterSignal(signal, _penIn);
+}
+
+void
+PointerSignalFilter::onPenOut(PenOut& signal) {
+
+	filterSignal(signal, _penOut);
 }
 
 void
