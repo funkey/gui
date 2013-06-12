@@ -22,6 +22,8 @@ Buffer::Buffer(GLsizei width, GLsizei height, GLint format, GLenum type) :
 
 Buffer::~Buffer()
 {
+	OpenGl::Guard guard;
+
 	// delete buffer
 	glCheck(glDeleteBuffersARB(1, &_buf));
 }
