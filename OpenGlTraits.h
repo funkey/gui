@@ -13,6 +13,8 @@
 #include <gui/Cairo.h>
 #endif
 
+#include <gui/Skia.h>
+
 namespace gui {
 
 namespace detail {
@@ -89,6 +91,16 @@ struct pixel_format_traits<cairo_pixel_t> {
 };
 
 #endif
+
+// specialisation: GL_BGRA
+template <>
+struct pixel_format_traits<skia_pixel_t> {
+
+	typedef unsigned char      value_type;
+
+	enum { gl_format = GL_BGRA };
+	enum { gl_type   = GL_UNSIGNED_BYTE };
+};
 
 // specialisation: boost::array<???, 4>
 template <typename ValueType>
