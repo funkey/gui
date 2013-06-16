@@ -9,15 +9,15 @@ namespace gui {
 
 struct skia_pixel_t {
 
-	skia_pixel_t(unsigned char b = 255, unsigned char g = 255, unsigned char r = 255, unsigned char a = 255) :
-		blue(b),
-		green(g),
+	skia_pixel_t(unsigned char r = 255, unsigned char g = 255, unsigned char b = 255, unsigned char a = 255) :
 		red(r),
+		green(g),
+		blue(b),
 		alpha(a) {}
 
-	unsigned char blue;
-	unsigned char green;
 	unsigned char red;
+	unsigned char green;
+	unsigned char blue;
 	unsigned char alpha;
 };
 
