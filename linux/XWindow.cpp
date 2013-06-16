@@ -127,6 +127,27 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	// pen is in proximity
 	_serialIdsProperty = XInternAtom(_display, "Wacom Serial IDs", false);
 
+	if (mode.hideCursor) {
+
+		// hide the cursor
+		Cursor invisibleCursor;
+		Pixmap bitmapNoData;
+		XColor black;
+		static char noData[] = { 0,0,0,0,0,0,0,0 };
+		black.red = black.green = black.blue = 0;
+
+		bitmapNoData = XCreateBitmapFromData(_display, _window, noData, 8, 8);
+		invisibleCursor = XCreatePixmapCursor(
+				_display,
+				bitmapNoData,
+				bitmapNoData,
+				&black,
+				&black,
+				0, 0);
+		XDefineCursor(_display, _window, invisibleCursor);
+		XFreeCursor(_display, invisibleCursor);
+	}
+
 	// now we are ready to show the window
 	LOG_ALL(xlog) << "[XWindow] mapping window" << endl;
 

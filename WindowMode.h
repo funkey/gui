@@ -15,11 +15,13 @@ struct WindowMode {
 			int  x = 0,
 			int  y = 0,
 			int  depth_      = 32,
-			bool fullscreen_ = false) :
+			bool fullscreen_ = false,
+			bool hideCursor_ = false) :
 		size(width, height),
 		position((fullscreen_ ? 0 : x), (fullscreen_ ? 0 : y)),
 		depth(depth_),
-		fullscreen(fullscreen_) {}
+		fullscreen(fullscreen_),
+		hideCursor(hideCursor_) {}
 
 	WindowMode(
 			const point<int>& size_,
@@ -38,6 +40,8 @@ struct WindowMode {
 	int depth;
 
 	bool fullscreen;
+
+	bool hideCursor;
 };
 
 } // namespace gui
