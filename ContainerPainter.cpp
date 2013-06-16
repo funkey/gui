@@ -17,9 +17,11 @@ ContainerPainter::draw(
 
 	LOG_ALL(containerpainterlog) << "got a read-lock" << std::endl;
 
-	// draw each painter at its offset position
-	for (painter_offsets::iterator i = _painterOffsets.begin();
-	     i != _painterOffsets.end(); i++) {
+	// draw each painter at its offset position in reverse order, such that the 
+	// painter who gets the signals first is drawn last (i.e., on top of the 
+	// others)
+	for (painter_offsets::reverse_iterator i = _painterOffsets.rbegin();
+	     i != _painterOffsets.rend(); i++) {
 
 		const boost::shared_ptr<Painter>& painter = i->first;
 		const util::point<double>&        offset  = i->second;
