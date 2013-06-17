@@ -38,10 +38,6 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	if (_display == 0)
 		throw "[XWindow] Unable to open display";
 
-	// setup fullscreen -- that might change mode
-	if (mode.fullscreen)
-		setupFullscreen(mode);
-
 	XSetWindowAttributes attributes;
 
 	// register for events
@@ -157,6 +153,10 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	free(eventmask.mask);
 
 	LOG_ALL(xlog) << "[XWindow] initialized" << endl;
+
+	// setup fullscreen
+	if (mode.fullscreen)
+		setupFullscreen(mode);
 }
 
 XWindow::~XWindow() {
@@ -167,73 +167,22 @@ XWindow::~XWindow() {
 void
 XWindow::setupFullscreen(const WindowMode& mode) {
 
-	int v;
-	if (!XQueryExtension(_display, "RANDR", &v, &v, &v)) {
+	Atom wmState = XInternAtom(_display, "_NET_WM_STATE", false);
+	Atom fullscreen = XInternAtom(_display, "_NET_WM_STATE_FULLSCREEN", false);
 
-		LOG_ERROR(xlog) << "[XWindow] no xrandr extension found -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
+	XEvent event;
 
-	XRRScreenConfiguration* config =
-			XRRGetScreenInfo(
-					_display,
-					RootWindow(_display, _screen));
+	event.xclient.type = ClientMessage;
+	event.xclient.serial = 0;
+	event.xclient.send_event = True;
+	event.xclient.window = _window;
+	event.xclient.message_type = wmState;
+	event.xclient.format = 32;
+	event.xclient.data.l[0] = (mode.fullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE);
+	event.xclient.data.l[1] = fullscreen;
+	event.xclient.data.l[2] = 0;
 
-	if (!config) {
-
-		LOG_ERROR(xlog) << "[XWindow] failed to get xrandr screen configuration -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
-
-	Rotation rotation;
-	_previousMode = XRRConfigCurrentConfiguration(config, &rotation);
-
-	// get all possible resolutions
-	int numResolutions;
-	XRRScreenSize* resolutions = XRRConfigSizes(config, &numResolutions);
-
-	if (!resolutions || numResolutions == 0) {
-
-		LOG_ERROR(xlog) << "[XWindow] failed to get possible resolutions -- "
-		                << "can not switch to fullscreen" << endl;
-		return;
-	}
-
-	// find the closes resolution to the desired one
-	int bestResolution = -1;
-	int minDifference  = 0;
-	for (int i = 0; i < numResolutions; i++) {
-
-		int width  = resolutions[i].width;
-		int height = resolutions[i].height;
-
-		int difference =
-				abs(width  - mode.size.x) +
-				abs(height - mode.size.y);
-
-		if (difference < minDifference || bestResolution == -1) {
-
-			bestResolution = i;
-			minDifference  = difference;
-
-			if (minDifference == 0)
-				break;
-		}
-	}
-
-	// switch to closest fullscreen resolution
-	XRRSetScreenConfig(
-			_display,
-			config,
-			RootWindow(_display, _screen),
-			bestResolution,
-			rotation, CurrentTime);
-
-	XRRFreeScreenConfigInfo(config);
-
-	_fullscreen = true;
+	XSendEvent(_display, DefaultRootWindow(_display), false, SubstructureRedirectMask | SubstructureNotifyMask, &event);
 }
 
 void
@@ -562,9 +511,6 @@ XWindow::close() {
 
 	_closed = true;
 
-	// just if we changed it
-	restoreVideoMode();
-
 	// destroy input context
 	if (_inputContext) {
 
@@ -590,38 +536,6 @@ XWindow::close() {
 	// close X11 connection
 	XCloseDisplay(_display);
 	_display = 0;
-}
-
-void
-XWindow::restoreVideoMode() {
-
-	if (!_fullscreen)
-		return;
-
-	XRRScreenConfiguration* config =
-			XRRGetScreenInfo(
-					_display,
-					RootWindow(_display, _screen));
-
-	if (config) {
-
-		Rotation rotation;
-		XRRConfigCurrentConfiguration(config, &rotation);
-
-		XRRSetScreenConfig(
-				_display,
-				config,
-				RootWindow(_display, _screen),
-				_previousMode,
-				rotation,
-				CurrentTime);
-
-		XRRFreeScreenConfigInfo(config);
-
-	} else {
-
-		LOG_ERROR(xlog) << "[XWindow] that's odd: can't reset video mode..." << endl;
-	}
 }
 
 bool

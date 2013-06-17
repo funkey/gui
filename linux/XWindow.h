@@ -76,15 +76,19 @@ private:
 	};
 
 	/**
-	 * Finds the closes fullscreen resolution to the one given in mode and
-	 * switches to it.
+	 * Enums to add, remove, or toggle window manager properties.
 	 */
-	void setupFullscreen(const WindowMode& mode);
+	enum {
+
+		_NET_WM_STATE_REMOVE = 0,
+		_NET_WM_STATE_ADD = 1,
+		_NET_WM_STATE_TOGGLE = 2
+	};
 
 	/**
-	 * Restore the video mode that we had before we changed it.
+	 * Maximizes the window without decorations.
 	 */
-	void restoreVideoMode();
+	void setupFullscreen(const WindowMode& mode);
 
 	/**
 	 * Process a xinput2 property change event.
