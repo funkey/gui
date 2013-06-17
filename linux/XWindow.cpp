@@ -282,37 +282,49 @@ XWindow::processEvents() {
 
 				case XI_TouchBegin:
 
-					LOG_ALL(xlog) << "[XWindow] finger down" << std::endl;
+					if (inputType == Touch) {
 
-					processFingerDownEvent(
-								deviceEvent->time,
-								button,
-								point<double>(deviceEvent->event_x, deviceEvent->event_y),
-								deviceEvent->detail,
-								modifiers);
+						LOG_ALL(xlog) << "[XWindow] finger down" << std::endl;
+
+						processFingerDownEvent(
+									deviceEvent->time,
+									button,
+									point<double>(deviceEvent->event_x, deviceEvent->event_y),
+									deviceEvent->detail,
+									modifiers);
+					}
+
 					break;
 
 				case XI_TouchUpdate:
 
-					LOG_ALL(xlog) << "[XWindow] finger moved" << std::endl;
+					if (inputType == Touch) {
 
-					processFingerMoveEvent(
-								deviceEvent->time,
-								point<double>(deviceEvent->event_x, deviceEvent->event_y),
-								deviceEvent->detail,
-								modifiers);
+						LOG_ALL(xlog) << "[XWindow] finger moved" << std::endl;
+
+						processFingerMoveEvent(
+									deviceEvent->time,
+									point<double>(deviceEvent->event_x, deviceEvent->event_y),
+									deviceEvent->detail,
+									modifiers);
+					}
+
 					break;
 
 				case XI_TouchEnd:
 
-					LOG_ALL(xlog) << "[XWindow] finger up" << std::endl;
+					if (inputType == Touch) {
 
-					processFingerUpEvent(
-								deviceEvent->time,
-								button,
-								point<double>(deviceEvent->event_x, deviceEvent->event_y),
-								deviceEvent->detail,
-								modifiers);
+						LOG_ALL(xlog) << "[XWindow] finger up" << std::endl;
+
+						processFingerUpEvent(
+									deviceEvent->time,
+									button,
+									point<double>(deviceEvent->event_x, deviceEvent->event_y),
+									deviceEvent->detail,
+									modifiers);
+					}
+
 					break;
 
 				case XI_ButtonPress:
