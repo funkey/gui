@@ -162,6 +162,32 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 XWindow::~XWindow() {
 
 	close();
+
+	// destroy input context
+	if (_inputContext) {
+
+		XDestroyIC(_inputContext);
+		_inputContext = 0;
+	}
+
+	// destroy window
+	if (_window) {
+
+		XDestroyWindow(_display, _window);
+		XFlush(_display);
+		_window = 0;
+	}
+
+	// close input method
+	if (_inputMethod) {
+
+		XCloseIM(_inputMethod);
+		_inputMethod = 0;
+	}
+
+	// close X11 connection
+	XCloseDisplay(_display);
+	_display = 0;
 }
 
 void
@@ -511,31 +537,7 @@ XWindow::close() {
 
 	_closed = true;
 
-	// destroy input context
-	if (_inputContext) {
-
-		XDestroyIC(_inputContext);
-		_inputContext = 0;
-	}
-
-	// destroy window
-	if (_window) {
-
-		XDestroyWindow(_display, _window);
-		XFlush(_display);
-		_window = 0;
-	}
-
-	// close input method
-	if (_inputMethod) {
-
-		XCloseIM(_inputMethod);
-		_inputMethod = 0;
-	}
-
-	// close X11 connection
-	XCloseDisplay(_display);
-	_display = 0;
+	// TODO: unmap window
 }
 
 bool
