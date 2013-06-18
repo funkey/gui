@@ -237,6 +237,13 @@ Window::processPenOutEvent(unsigned long timestamp) {
 }
 
 bool
+Window::processPenAwayEvent(unsigned long timestamp) {
+
+	PenAway signal(timestamp);
+	_penAway(signal);
+}
+
+bool
 Window::processButtonUpEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,

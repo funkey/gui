@@ -488,6 +488,13 @@ XWindow::processPropertyEvent(XIPropertyEvent* propertyEvent) {
 	LOG_ALL(xlog) << "device " << propertyEvent->deviceid << " changed" << std::endl;
 	LOG_ALL(xlog) << "\tatom: " << XGetAtomName(_display, propertyEvent->property) << ", what: " << propertyEvent->what << std::endl;
 
+	// what == 0 is set when the pen was put back into the tablet
+	if (propertyEvent->what == 0) {
+
+		processPenAwayEvent(propertyEvent->time);
+		return;
+	}
+
 	// we're only interested in the serial IDs
 	if (propertyEvent->property != _serialIdsProperty)
 		return;

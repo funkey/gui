@@ -152,6 +152,30 @@ public:
 	 *
 	 * @param event The input event.
 	 */
+	virtual bool processPenInEvent(
+			unsigned long              timestamp) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processPenOutEvent(
+			unsigned long              timestamp) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
+	virtual bool processPenAwayEvent(
+			unsigned long              timestamp) = 0;
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
 	virtual bool processButtonUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
@@ -178,22 +202,6 @@ public:
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			const Modifiers&           modifiers) = 0;
-	/**
-	 * Callback for input events.
-	 *
-	 * @param event The input event.
-	 */
-	virtual bool processPenInEvent(
-			unsigned long              timestamp) = 0;
-
-	/**
-	 * Callback for input events.
-	 *
-	 * @param event The input event.
-	 */
-	virtual bool processPenOutEvent(
-			unsigned long              timestamp) = 0;
-
 
 	/**
 	 * Get the caption of this window as assigned by the constructor.

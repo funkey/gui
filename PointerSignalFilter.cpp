@@ -13,6 +13,7 @@ PointerSignalFilter::filterBackward(pipeline::OutputBase& output, pipeline::Inpu
 	output.registerForwardCallback(boost::function<void(PenMove&)>(boost::bind(&PointerSignalFilter::onPenMove, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(PenIn&)>(boost::bind(&PointerSignalFilter::onPenIn, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(PenOut&)>(boost::bind(&PointerSignalFilter::onPenOut, this, _1)), processNode, signals::Transparent);
+	output.registerForwardCallback(boost::function<void(PenAway&)>(boost::bind(&PointerSignalFilter::onPenAway, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseUp&)>(boost::bind(&PointerSignalFilter::onMouseUp,   this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseDown&)>(boost::bind(&PointerSignalFilter::onMouseDown, this, _1)), processNode, signals::Transparent);
 	output.registerForwardCallback(boost::function<void(MouseMove&)>(boost::bind(&PointerSignalFilter::onMouseMove, this, _1)), processNode, signals::Transparent);
@@ -25,6 +26,7 @@ PointerSignalFilter::filterBackward(pipeline::OutputBase& output, pipeline::Inpu
 	input.registerBackwardSlot(_penMove);
 	input.registerBackwardSlot(_penIn);
 	input.registerBackwardSlot(_penOut);
+	input.registerBackwardSlot(_penAway);
 	input.registerBackwardSlot(_mouseUp);
 	input.registerBackwardSlot(_mouseDown);
 	input.registerBackwardSlot(_mouseMove);
@@ -76,6 +78,12 @@ void
 PointerSignalFilter::onPenOut(PenOut& signal) {
 
 	filterSignal(signal, _penOut);
+}
+
+void
+PointerSignalFilter::onPenAway(PenAway& signal) {
+
+	filterSignal(signal, _penAway);
 }
 
 void

@@ -240,6 +240,14 @@ private:
 	 *
 	 * @param event The input event.
 	 */
+	bool processPenAwayEvent(
+			unsigned long              timestamp);
+
+	/**
+	 * Callback for input events.
+	 *
+	 * @param event The input event.
+	 */
 	bool processButtonUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
@@ -317,6 +325,7 @@ private:
 	signals::Slot<PenUp>                  _penUp;
 	signals::Slot<PenIn>                  _penIn;
 	signals::Slot<PenOut>                 _penOut;
+	signals::Slot<PenAway>                _penAway;
 	signals::Slot<MouseMove>              _mouseMove;
 	signals::Slot<MouseDown>              _mouseDown;
 	signals::Slot<MouseUp>                _mouseUp;

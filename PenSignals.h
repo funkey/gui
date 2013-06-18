@@ -108,6 +108,20 @@ public:
 				gui::NoModifier) {}
 };
 
+class PenAway : public PenSignal {
+
+public:
+
+	PenAway() {}
+
+	PenAway(unsigned long timestamp) :
+		PenSignal(
+				timestamp,
+				util::point<double>(0, 0),
+				0,
+				gui::NoModifier) {}
+};
+
 
 } // namespace gui
 
