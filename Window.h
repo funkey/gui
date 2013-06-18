@@ -12,6 +12,7 @@
 #include <gui/PenSignals.h>
 #include <gui/MouseSignals.h>
 #include <gui/KeySignals.h>
+#include <gui/WindowSignals.h>
 #include <gui/Painter.h>
 #include <pipeline/all.h>
 #include <signals/Slot.h>
@@ -118,6 +119,11 @@ private:
 	 * Pipeline callback for content change signals from the painter.
 	 */
 	void onContentChanged(const ContentChanged& signal);
+
+	/**
+	 * Pipeline callback for fullscreen requests.
+	 */
+	void onFullscreen(const WindowFullscreen& signal);
 
 	/**
 	 * Callback for top-down resize events.

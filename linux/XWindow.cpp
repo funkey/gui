@@ -155,8 +155,7 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	LOG_ALL(xlog) << "[XWindow] initialized" << endl;
 
 	// setup fullscreen
-	if (mode.fullscreen)
-		setupFullscreen(mode);
+	setFullscreen(mode.fullscreen);
 }
 
 XWindow::~XWindow() {
@@ -191,10 +190,10 @@ XWindow::~XWindow() {
 }
 
 void
-XWindow::setupFullscreen(const WindowMode& mode) {
+XWindow::setFullscreen(bool fullscreen) {
 
 	Atom wmState = XInternAtom(_display, "_NET_WM_STATE", false);
-	Atom fullscreen = XInternAtom(_display, "_NET_WM_STATE_FULLSCREEN", false);
+	Atom fullscreenAtom = XInternAtom(_display, "_NET_WM_STATE_FULLSCREEN", false);
 
 	XEvent event;
 
@@ -204,11 +203,13 @@ XWindow::setupFullscreen(const WindowMode& mode) {
 	event.xclient.window = _window;
 	event.xclient.message_type = wmState;
 	event.xclient.format = 32;
-	event.xclient.data.l[0] = (mode.fullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE);
-	event.xclient.data.l[1] = fullscreen;
+	event.xclient.data.l[0] = (fullscreen ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE);
+	event.xclient.data.l[1] = fullscreenAtom;
 	event.xclient.data.l[2] = 0;
 
 	XSendEvent(_display, DefaultRootWindow(_display), false, SubstructureRedirectMask | SubstructureNotifyMask, &event);
+
+	_fullscreen = fullscreen;
 }
 
 void
@@ -438,7 +439,10 @@ XWindow::processEvents() {
 					key       = keycodeToKey(event.xkey.keycode);
 					modifiers = stateToModifiers(event.xkey.state);
 
-					processKeyUpEvent(key, modifiers);
+					if (key == gui::keys::F)
+						setFullscreen(!_fullscreen);
+					else
+						processKeyUpEvent(key, modifiers);
 
 					break;
 

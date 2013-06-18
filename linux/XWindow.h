@@ -47,6 +47,11 @@ public:
 	bool closed();
 
 	/**
+	 * Maximizes the window without decorations.
+	 */
+	void setFullscreen(bool fullscreen);
+
+	/**
 	 * Process all accumulated X events since the last call to this function.
 	 * This method should be called repeatedly to ensure proper redrawing and
 	 * user interaction.
@@ -84,11 +89,6 @@ private:
 		_NET_WM_STATE_ADD = 1,
 		_NET_WM_STATE_TOGGLE = 2
 	};
-
-	/**
-	 * Maximizes the window without decorations.
-	 */
-	void setupFullscreen(const WindowMode& mode);
 
 	/**
 	 * Process a xinput2 property change event.

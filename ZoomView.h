@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <gui/ZoomPainter.h>
 #include <gui/PointerSignalFilter.h>
+#include <gui/WindowSignalFilter.h>
 #include <gui/KeySignals.h>
 #include <gui/MouseSignals.h>
 #include <gui/Keys.h>
@@ -11,7 +12,7 @@
 
 namespace gui {
 
-class ZoomView : public pipeline::SimpleProcessNode<>, public PointerSignalFilter {
+class ZoomView : public pipeline::SimpleProcessNode<>, public PointerSignalFilter, public WindowSignalFilter {
 
 public:
 

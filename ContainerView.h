@@ -8,6 +8,7 @@
 #include <gui/MouseSignals.h>
 #include <gui/KeySignals.h>
 #include <gui/PointerSignalFilter.h>
+#include <gui/WindowSignalFilter.h>
 #include <pipeline/all.h>
 #include <signals/Slots.h>
 #include <util/point.hpp>
@@ -18,7 +19,7 @@ namespace gui {
 static logger::LogChannel containerviewlog("containerviewlog", "[ContainerView] ");
 
 template <class PlacingStrategy>
-class ContainerView : public pipeline::SimpleProcessNode<>, public PointerSignalFilter, public PlacingStrategy {
+class ContainerView : public pipeline::SimpleProcessNode<>, public PointerSignalFilter, public WindowSignalFilter, public PlacingStrategy {
 
 	BOOST_CONCEPT_ASSERT((IsPlacingStrategy<PlacingStrategy>));
 
@@ -32,6 +33,9 @@ public:
 
 		// establish pointer signal filter
 		PointerSignalFilter::filterBackward(_container, _painters, this);
+
+		// establish window signal filter
+		WindowSignalFilter::filterForward(_painters, _container, this);
 
 		_painters.registerBackwardCallback(&ContainerView::onPainterAdded, this);
 		_painters.registerBackwardCallback(&ContainerView::onPainterRemoved, this);

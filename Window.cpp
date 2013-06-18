@@ -54,6 +54,7 @@ Window::Window(
 	_painter.registerBackwardCallback(&Window::onModified, this);
 	_painter.registerBackwardCallback(&Window::onSizeChanged, this);
 	_painter.registerBackwardCallback(&Window::onContentChanged, this);
+	_painter.registerBackwardCallback(&Window::onFullscreen, this);
 
 	// initiate first redraw
 	setDirty();
@@ -413,6 +414,18 @@ void
 Window::onContentChanged(const ContentChanged& signal) {
 
 	LOG_ALL(winlog) << "[" << getCaption() << "] received a content change signal" << endl;
+
+	boost::mutex::scoped_lock lock(getDirtyMutex());
+
+	setDirty();
+}
+
+void
+Window::onFullscreen(const WindowFullscreen& signal) {
+
+	LOG_ALL(winlog) << "[" << getCaption() << "] received a fullscreen request" << endl;
+
+	setFullscreen(signal.fullscreen);
 
 	boost::mutex::scoped_lock lock(getDirtyMutex());
 

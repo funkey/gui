@@ -42,6 +42,11 @@ public:
 	virtual bool closed() = 0;
 
 	/**
+	 * Change to or from fullscreen mode.
+	 */
+	virtual void setFullscreen(bool fullscreen) = 0;
+
+	/**
 	 * Get the resolution of this window.
 	 *
 	 * @return The resolution of this window.

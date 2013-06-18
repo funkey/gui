@@ -17,6 +17,9 @@ ZoomView::ZoomView(bool autoscale) :
 	// establish pointer signal filter
 	PointerSignalFilter::filterBackward(_zoomed, _content, this);
 
+	// establish window signal filter
+	WindowSignalFilter::filterForward(_content, _zoomed, this);
+
 	_content.registerBackwardSlot(_keyDown);
 	_content.registerBackwardSlot(_keyUp);
 	_content.registerBackwardCallback(&ZoomView::onInputSet, this);

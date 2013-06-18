@@ -39,6 +39,9 @@ private:
 	util::rect<double> _newSize;
 };
 
+/**
+ * A resize signal, to be sent downstream to request the resize of painters.
+ */
 class Resize : public GuiSignal {
 
 public:
@@ -58,6 +61,9 @@ private:
 	util::rect<double> _toSize;
 };
 
+/**
+ * Base class for user input signals.
+ */
 class InputSignal : public GuiSignal {
 
 public:
