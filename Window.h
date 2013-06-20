@@ -16,9 +16,7 @@
 #include <gui/Painter.h>
 #include <pipeline/all.h>
 #include <signals/Slot.h>
-
-// TODO: let cmake figure that out
-#define SYSTEM_LINUX 1
+#include <config.h>
 
 // include platform dependent implementations
 #if defined(SYSTEM_LINUX) || defined(SYSTEM_FREEBSD)
