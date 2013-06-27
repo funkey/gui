@@ -80,7 +80,7 @@ struct pixel_format_traits<vigra::RGBValue<ValueType> > {
 
 #ifdef HAVE_CAIRO
 
-// specialisation: GL_BGRA
+// specialisation: Cairo
 template <>
 struct pixel_format_traits<cairo_pixel_t> {
 
@@ -92,13 +92,13 @@ struct pixel_format_traits<cairo_pixel_t> {
 
 #endif
 
-// specialisation: GL_BGRA
+// specialisation: Skia
 template <>
 struct pixel_format_traits<skia_pixel_t> {
 
 	typedef unsigned char      value_type;
 
-	enum { gl_format = GL_BGRA };
+	enum { gl_format = GL_RGBA };
 	enum { gl_type   = GL_UNSIGNED_BYTE };
 };
 
