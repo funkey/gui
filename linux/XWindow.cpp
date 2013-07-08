@@ -212,11 +212,11 @@ XWindow::setFullscreen(bool fullscreen) {
 	_fullscreen = fullscreen;
 }
 
-void
+bool
 XWindow::processEvents() {
 
 	if (closed())
-		return;
+		return false;
 
 	XEvent event;
 
@@ -407,7 +407,7 @@ XWindow::processEvents() {
 						processCloseEvent();
 
 						// there is no need to process further events
-						return;
+						return true;
 					}
 
 					break;
@@ -419,7 +419,7 @@ XWindow::processEvents() {
 					processCloseEvent();
 
 					// there is no need to process further events
-					return;
+					return true;
 
 				case KeyPress:
 					LOG_ALL(xlog) << "[XWindow] window "
@@ -479,7 +479,11 @@ XWindow::processEvents() {
 		setDirty(false);
 
 		redraw();
+
+		return true;
 	}
+
+	return numEvents > 0;
 }
 
 void

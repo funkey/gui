@@ -59,9 +59,11 @@ public:
 	 * user interaction. Any implementation has to make sure that the
 	 * appropriate process...Event() methods are called.
 	 *
+	 * Shall return true, if there were events to process, false otherwise.
+	 *
 	 * Platform dependent.
 	 */
-	virtual void processEvents() = 0;
+	virtual bool processEvents() = 0;
 
 	/**
 	 * Callback for input events.
