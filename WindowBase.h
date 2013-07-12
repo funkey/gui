@@ -255,19 +255,9 @@ protected:
 		return _dirty;
 	}
 
-	/**
-	 * Get the mutex on the dirty flag to avoid race-conditions.
-	 */
-	boost::mutex& getDirtyMutex() {
-
-		return _dirtyMutex;
-	}
-
 private:
 
 	bool   _dirty;
-
-	boost::mutex _dirtyMutex;
 
 	string _caption;
 };

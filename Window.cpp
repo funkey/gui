@@ -392,15 +392,11 @@ Window::saveFrame() {
 void
 Window::onInputAdded(const pipeline::InputAdded<gui::Painter>& signal) {
 
-	boost::mutex::scoped_lock lock(getDirtyMutex());
-
 	setDirty();
 }
 
 void
 Window::onModified(const pipeline::Modified& signal) {
-
-	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
@@ -412,8 +408,6 @@ Window::onSizeChanged(const SizeChanged& signal) {
 	// Here, we could resize the window to fit the view. However, this should be
 	// an optional feature.
 
-	boost::mutex::scoped_lock lock(getDirtyMutex());
-
 	setDirty();
 }
 
@@ -421,8 +415,6 @@ void
 Window::onContentChanged(const ContentChanged& signal) {
 
 	LOG_ALL(winlog) << "[" << getCaption() << "] received a content change signal" << endl;
-
-	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
@@ -433,8 +425,6 @@ Window::onFullscreen(const WindowFullscreen& signal) {
 	LOG_ALL(winlog) << "[" << getCaption() << "] received a fullscreen request" << endl;
 
 	setFullscreen(signal.fullscreen);
-
-	boost::mutex::scoped_lock lock(getDirtyMutex());
 
 	setDirty();
 }
