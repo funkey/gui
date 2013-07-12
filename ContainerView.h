@@ -112,8 +112,6 @@ private:
 
 		LOG_ALL(containerviewlog) << getName() << ": " << "got a ContentChanged signal -- passing it on" << std::endl;
 
-		setDirty(_container);
-
 		_contentChanged(signal);
 	}
 
