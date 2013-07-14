@@ -3,6 +3,7 @@
 #include <util/Logger.h>
 #include <util/exceptions.h>
 #include "TextPainter.h"
+#include <config.h>
 
 using std::string;
 using std::endl;
@@ -20,15 +21,19 @@ TextPainter::TextPainter(string text) :
 	_cairoHeight(1),
 	_padding(_textSize/2),
 	_textColor(4, 1.0),
+#if HAVE_CAIRO
 	_context(0),
 	_surface(0),
 	_fontOptions(0),
+#endif
 	_glRoi(0, 0, 0, 0),
 	_glSize(0, 0, 0, 0),
 	_glPadding(0, 0),
 	_rasterPos(0, 0),
 	_lastResolution(1, 1),
 	_lastRoi(0, 0, 0, 0) {
+
+#if HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
@@ -47,9 +52,13 @@ TextPainter::TextPainter(string text) :
 
 	// override system default antialiasing method
 	cairo_font_options_set_antialias(_fontOptions, CAIRO_ANTIALIAS_DEFAULT);
+
+#endif
 }
 
 TextPainter::~TextPainter() {
+
+#if HAVE_CAIRO
 
 	if (_context)
 		cairo_destroy(_context);
@@ -69,12 +78,16 @@ TextPainter::~TextPainter() {
 		// delete pixel buffer object
 		glCheck(glDeleteBuffersARB(1, &_buf));
 	}
+
+#endif
 }
 
 void
 TextPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
+
+#if HAVE_CAIRO
 
 	boost::mutex::scoped_lock lock(_cairoMutex);
 
@@ -100,20 +113,28 @@ TextPainter::draw(
 	//}
 
 	drawText();
+
+#endif
 }
 
 void
 TextPainter::setText(std::string text) {
+
+#if HAVE_CAIRO
 
 	_text = text;
 
 	boost::mutex::scoped_lock lock(_cairoMutex);
 
 	computeSize(_lastRoi, _lastResolution);
+
+#endif
 }
 
 void
 TextPainter::setTextSize(double size) {
+
+#if HAVE_CAIRO
 
 	_textSize = size;
 	_padding  = size/2;
@@ -121,21 +142,29 @@ TextPainter::setTextSize(double size) {
 	boost::mutex::scoped_lock lock(_cairoMutex);
 
 	computeSize(_lastRoi, _lastResolution);
+
+#endif
 }
 
 void
 TextPainter::setTextColor(double r, double g, double b, double a) {
 
+#if HAVE_CAIRO
+
 	_textColor[0] = r;
 	_textColor[1] = g;
 	_textColor[2] = b;
 	_textColor[3] = a;
+
+#endif
 }
 
 void
 TextPainter::computeSize(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
+
+#if HAVE_CAIRO
 
 	LOG_ALL(textpainterlog) << "[computeSize] computing size..." << std::endl;
 
@@ -286,11 +315,13 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 	cairo_show_text(_context, _text.c_str());
 
 	finishBuffer();
+#endif
 }
 
 void
 TextPainter::setFont() {
 
+#if HAVE_CAIRO
 	cairo_select_font_face(
 			_context,
 			"sans-serif",
@@ -307,10 +338,13 @@ TextPainter::setFont() {
 			_textColor[1],
 			_textColor[2],
 			_textColor[3]);
+#endif
 }
 
 bool
 TextPainter::prepareBuffer() {
+
+#if HAVE_CAIRO
 
 	if (_cairoWidth <= 0 || _cairoHeight <= 0)
 		return false;
@@ -376,11 +410,15 @@ TextPainter::prepareBuffer() {
 	// set antialiasing options
 	cairo_set_font_options(_context, _fontOptions);
 
+#endif
+
 	return true;
 }
 
 void
 TextPainter::finishBuffer() {
+
+#if HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
@@ -390,10 +428,14 @@ TextPainter::finishBuffer() {
 
 	// unbind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+
+#endif
 }
 
 void
 TextPainter::drawText() {
+
+#if HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
@@ -426,6 +468,8 @@ TextPainter::drawText() {
 
 	// unbind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+
+#endif
 }
 
 } // namespace gui

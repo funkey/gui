@@ -76,6 +76,7 @@ private:
 	// the color of the text (rgba)
 	std::vector<double> _textColor;
 
+#if HAVE_CAIRO
 	// the cairo context
 	cairo_t*            _context;
 
@@ -87,6 +88,7 @@ private:
 
 	// the extents of the text in cairo units
 	cairo_text_extents_t _extents;
+#endif
 
 	// the relevant part of the text in gl units
 	util::rect<double>  _glRoi;
