@@ -1,5 +1,8 @@
+#if HAVE_PNG
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
+using namespace boost::gil;
+#endif
 
 #include <util/Logger.h>
 #include <util/helpers.hpp>
@@ -10,7 +13,6 @@
 
 using std::cout;
 using std::endl;
-using namespace boost::gil;
 
 using namespace logger;
 
@@ -363,6 +365,7 @@ Window::requestFrameSave() {
 void
 Window::saveFrame() {
 
+#if HAVE_PNG
 	if (closed())
 		return;
 
@@ -387,6 +390,7 @@ Window::saveFrame() {
 			flipped_up_down_view(frameView));
 
 	_frameNumber++;
+#endif
 }
 
 void
