@@ -98,7 +98,7 @@ struct pixel_format_traits<skia_pixel_t> {
 
 	typedef unsigned char      value_type;
 
-	enum { gl_format = GL_RGBA };
+	enum { gl_format = GL_BGRA };
 	enum { gl_type   = GL_UNSIGNED_BYTE };
 };
 
