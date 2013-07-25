@@ -36,7 +36,8 @@ ContainerPainter::draw(
 
 			glTranslated(offset.x, offset.y, 0);
 
-			wantsRedraw = wantsRedraw || painter->draw(roi - offset, resolution);
+			bool painterWantsRedraw = painter->draw(roi - offset, resolution);
+			wantsRedraw = wantsRedraw || painterWantsRedraw;
 
 			glTranslated(-offset.x, -offset.y, 0);
 
