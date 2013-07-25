@@ -75,7 +75,7 @@ public:
 	/**
 	 * Inherited from Painter.
 	 */
-	void draw(const util::rect<double>& roi, const util::point<double>& resolution);
+	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
 	/**
 	 * Apply the inverse zoom- and scale-transformation to a given point.

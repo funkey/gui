@@ -28,7 +28,7 @@ public:
 
 	virtual ~TextPainter();
 
-	virtual void draw(
+	virtual bool draw(
 			const util::rect<double>&  roi,
 			const util::point<double>& resolution);
 

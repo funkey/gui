@@ -16,7 +16,7 @@ public:
 
 	void setHighlight(bool highlight);
 
-	void draw(const util::rect<double>& roi, const util::point<double>& resolution);
+	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
 	const util::rect<double>& getGraspSize();
 

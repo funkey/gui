@@ -82,7 +82,7 @@ TextPainter::~TextPainter() {
 #endif
 }
 
-void
+bool
 TextPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
@@ -107,7 +107,7 @@ TextPainter::draw(
 
 		// if there is nothing to do, don't do it
 		if (_glRoi.width() <= 0 || _glRoi.height() <= 0)
-			return;
+			return false;
 
 		LOG_ALL(textpainterlog) << "(re)loaded texture" << endl;
 	//}
@@ -115,6 +115,8 @@ TextPainter::draw(
 	drawText();
 
 #endif
+
+	return false;
 }
 
 void

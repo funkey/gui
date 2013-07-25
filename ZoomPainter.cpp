@@ -88,7 +88,7 @@ ZoomPainter::drag(const util::point<double>& direction) {
 	updateScaleAndShift();
 }
 
-void
+bool
 ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& resolution) {
 
 	LOG_ALL(zoompainterlog) << "drawing" << std::endl;
@@ -102,9 +102,11 @@ ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& reso
 	glTranslated(_shift.x, _shift.y, 0.0);
 	glScaled(_scale, _scale, 1.0);
 
-	_content->draw((roi - _shift)/_scale, resolution*_scale);
+	bool wantsRedraw = _content->draw((roi - _shift)/_scale, resolution*_scale);
 
 	glPopMatrix();
+
+	return wantsRedraw;
 }
 
 void

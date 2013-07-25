@@ -35,7 +35,7 @@ public:
 	 * Draws the painters that are stored in this container at the offsets
 	 * associated with them.
 	 */
-	virtual void draw(
+	virtual bool draw(
 			const util::rect<double>&  roi,
 			const util::point<double>& resolution);
 

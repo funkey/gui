@@ -28,7 +28,7 @@ SliderPainter::setHighlight(bool highlight) {
 	_highlight = highlight;
 }
 
-void
+bool
 SliderPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
@@ -54,6 +54,8 @@ SliderPainter::draw(
 	glVertex2d(_graspSize.maxX, _graspSize.maxY);
 	glVertex2d(_graspSize.minX, _graspSize.maxY);
 	glEnd();
+
+	return false;
 }
 
 const util::rect<double>&

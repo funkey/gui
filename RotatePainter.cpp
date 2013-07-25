@@ -26,7 +26,7 @@ RotatePainter::setRotation(double x, double y, double z, double w) {
 	_w = w;
 }
 
-void
+bool
 RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& resolution) {
 
 	OpenGl::Guard guard;
@@ -79,9 +79,11 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	glEnd();
 
 	// draw content
-	_content->draw(roi, resolution);
+	bool wantsRedraw = _content->draw(roi, resolution);
 
 	glPopMatrix();
+
+	return wantsRedraw;
 }
 
 void

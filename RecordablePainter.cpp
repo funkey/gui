@@ -22,7 +22,7 @@ RecordablePainter::~RecordablePainter() {
 	}
 }
 
-void
+bool
 RecordablePainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& res) {
@@ -33,12 +33,15 @@ RecordablePainter::draw(
 
 		LOG_ALL(recordablepainterlog) << getName() << "trying to draw without initialisation of display list" << std::endl;
 
-		return;
+		return false;
 	}
 
 	LOG_ALL(recordablepainterlog) << getName() << "redrawing" << std::endl;
 
 	glCallList(_displayList);
+
+	// display lists are static -- no need to redraw again
+	return false;
 }
 
 void

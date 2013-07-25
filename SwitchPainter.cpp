@@ -28,7 +28,7 @@ SwitchPainter::setHighlight(bool highlight) {
 	_highlight = highlight;
 }
 
-void
+bool
 SwitchPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
@@ -67,6 +67,8 @@ SwitchPainter::draw(
 	glVertex2d(size.maxX, size.maxY);
 	glVertex2d(size.minX, size.maxY);
 	glEnd();
+
+	return false;
 }
 
 } // namespace gui

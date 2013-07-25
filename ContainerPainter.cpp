@@ -5,7 +5,7 @@ namespace gui {
 
 static logger::LogChannel containerpainterlog("containerpainterlog", "[ContainerPainter] ");
 
-void
+bool
 ContainerPainter::draw(
 			const util::rect<double>&  roi,
 			const util::point<double>& resolution) {
@@ -16,6 +16,8 @@ ContainerPainter::draw(
 	boost::shared_lock<boost::shared_mutex> lock(_paintersMutex);
 
 	LOG_ALL(containerpainterlog) << "got a read-lock" << std::endl;
+
+	bool wantsRedraw = false;
 
 	// draw each painter at its offset position in reverse order, such that the 
 	// painter who gets the signals first is drawn last (i.e., on top of the 
@@ -34,7 +36,7 @@ ContainerPainter::draw(
 
 			glTranslated(offset.x, offset.y, 0);
 
-			painter->draw(roi - offset, resolution);
+			wantsRedraw = wantsRedraw || painter->draw(roi - offset, resolution);
 
 			glTranslated(-offset.x, -offset.y, 0);
 
@@ -45,6 +47,8 @@ ContainerPainter::draw(
 	}
 
 	LOG_ALL(containerpainterlog) << "done redrawing" << std::endl;
+
+	return wantsRedraw;
 }
 
 void

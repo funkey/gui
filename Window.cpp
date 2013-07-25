@@ -327,7 +327,10 @@ Window::redraw() {
 			return;
 
 		// draw the updated painter
-		_painter->draw(_region, point<double>(1.0, 1.0));
+		bool wantsRedraw = _painter->draw(_region, point<double>(1.0, 1.0));
+
+		if (wantsRedraw)
+			setDirty();
 
 	} else {
 

@@ -15,7 +15,7 @@ public:
 
 	void setRotation(double x, double y, double z, double w);
 
-	void draw(const util::rect<double>& roi, const util::point<double>& resolution);
+	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
 	void updateSize();
 

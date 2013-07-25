@@ -27,12 +27,19 @@ public:
 	 * Draw this painter.
 	 *
 	 * Has to be overwritten in subclasses to create new painters. The arguments
-	 * can safely be ignored, however, they might be helpful speed up drawing.
+	 * can safely be ignored, however, they might be helpful speed up drawing.  
+	 * The painters can return true to initiate a redraw as soon as possible.  
+	 * This can be used for animations. Otherwise, the painter gets redrawn only 
+	 * if the upstream process node initiates a redraw (which can happen because 
+	 * of a window mapping event or the setting of a dirty flag from downstream 
+	 * process nodes).
 	 *
 	 * @param roi        The region that is requested.
 	 * @param resolution The resolution in pixels per roi-unit.
+	 * @return True, if the painter wants to be called again as soon as 
+	 * possible.
 	 */
-	virtual void draw(
+	virtual bool draw(
 			const util::rect<double>&  roi,
 			const util::point<double>& resolution) = 0;
 
