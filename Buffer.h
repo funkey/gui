@@ -6,6 +6,9 @@
 
 namespace gui {
 
+// forward declaration
+class Texture;
+
 /**
  * A class providing access to device memory.
  */
@@ -30,16 +33,21 @@ public:
 	 * Frees the buffer and pixel buffer object.
 	 */
 	virtual ~Buffer();
+
+	/**
+	 * Load this buffers data from a texture.
+	 */
+	void loadData(Texture& texture);
 	
 	/**
 	 * Bind this buffer. Calls glBindBuffer().
 	 */
-	void bind() const;
+	void bind(GLenum target = GL_PIXEL_UNPACK_BUFFER) const;
 
 	/**
 	 * Unbinds this buffer.
 	 */
-	void unbind() const;
+	void unbind(GLenum target = GL_PIXEL_UNPACK_BUFFER) const;
 
 	/**
 	 * Resize the buffer.
@@ -55,6 +63,11 @@ public:
 	 * @return The height of the buffer in pixels.
 	 */
 	inline GLsizei height() const { return _height; };
+
+	/**
+	 * @return The size of the buffer in bytes.
+	 */
+	inline GLsizei size() const { return _size; };
 
 	inline GLint getFormat() const { return _format; };
 
@@ -84,6 +97,9 @@ private:
 	GLsizei _width;
 	GLsizei _height;
 
+	// the size of the buffer in bytes
+	GLsizei _size;
+
 	// the internal OpenGL id of the buffer object
 	GLuint _buf;
 
@@ -100,10 +116,10 @@ PixelType*
 Buffer::map() {
 
 	// bind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
 
 	// map the pixel buffer object
-	_mapped = glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+	_mapped = glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 
 	return (PixelType*)_mapped;
 }
