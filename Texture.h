@@ -48,7 +48,7 @@ public:
 	/**
 	 * Load texture data from a buffer.
 	 */
-	void loadData(const Buffer& buffer, int offsetx, int offsety, float scale = 1.0f, float bias = 0.0f);
+	void loadData(const Buffer& buffer, int offsetx = 0, int offsety = 0, float scale = 1.0f, float bias = 0.0f);
 
 	/**
 	 * Bind this texture. Calls glBindTexture().
@@ -113,6 +113,9 @@ private:
 	// the internal OpenGL id of the buffer object
 	GLuint _buf;
 
+	// indicates that the texture was changed without using _buf
+	bool _bufferDirty;
+
 	// pointer to the mapped memory of this texture
 	void* _mapped;
 };
@@ -124,6 +127,27 @@ private:
 template <typename PixelType>
 PixelType*
 Texture::map() {
+
+	if (_bufferDirty) {
+
+		// get the appropriate OpenGL format and type for this pixel type
+		GLenum format = detail::pixel_format_traits<PixelType>::gl_format;
+		GLenum type   = detail::pixel_format_traits<PixelType>::gl_type;
+
+		// bind buffer
+		glCheck(glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, _buf));
+
+		// bind texture
+		bind();
+
+		// copy texture content into buffer
+		glCheck(glGetTexImage(GL_TEXTURE_2D, 0, format, type, 0));
+
+		// unbind texture
+		unbind();
+
+		_bufferDirty = false;
+	}
 
 	// bind buffer
 	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));

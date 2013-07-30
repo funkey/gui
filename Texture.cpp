@@ -13,6 +13,7 @@ Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	_texHeight(1),
 	_tex(0),
 	_buf(0),
+	_bufferDirty(false),
 	_mapped(0) {
 
 	// make sure we have a valid OpenGl context
@@ -22,7 +23,7 @@ Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	glCheck(glGenTextures(1, &_tex));
 
 	// create a pixel buffer object for the texture
-	glCheck(glGenBuffersARB(1, &_buf));
+	glCheck(glGenBuffers(1, &_buf));
 
 	// setup texture
 	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
@@ -41,7 +42,7 @@ Texture::~Texture()
 	OpenGl::Guard guard;
 
 	// delete buffer
-	glCheck(glDeleteBuffersARB(1, &_buf));
+	glCheck(glDeleteBuffers(1, &_buf));
 
 	// delete texture
 	glCheck(glDeleteTextures(1, &_tex));
@@ -57,7 +58,7 @@ Texture::resize(GLsizei width, GLsizei height) {
 	_height = height;
 
 	// bind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
 
 	// create new buffer
 	unsigned int size = _width*_height;
@@ -65,10 +66,10 @@ Texture::resize(GLsizei width, GLsizei height) {
 		size *= 3;
 	else if (_format == GL_RGBA)
 		size *= 4;
-	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, size, 0, GL_DYNAMIC_DRAW));
+	glCheck(glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW));
 
 	// unbind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 
 	// bind texture
 	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
@@ -110,6 +111,10 @@ Texture::loadData(const Buffer& buffer, int xoffset, int yoffset, float scale, f
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
 
+	////////////////////
+	// update texture //
+	////////////////////
+
 	// bind texture
 	bind();
 
@@ -140,9 +145,14 @@ Texture::loadData(const Buffer& buffer, int xoffset, int yoffset, float scale, f
 	glCheck(glPixelTransferf(GL_GREEN_BIAS,  0.0));
 	glCheck(glPixelTransferf(GL_BLUE_BIAS,   0.0));
 
+	// unbind texture
 	unbind();
 
+	// unbind buffer
 	buffer.unbind();
+
+	// the texture was changed, but _buf wasn't
+	_bufferDirty = true;
 }
 
 } // namespace gui
