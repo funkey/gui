@@ -42,7 +42,7 @@ TextPainter::TextPainter(string text) :
 		boost::mutex::scoped_lock lock(OpenGl::getMutex());
 
 		// create a pixel buffer object
-		glCheck(glGenBuffersARB(1, &_buf));
+		glCheck(glGenBuffers(1, &_buf));
 	}
 
 	LOG_ALL(textpainterlog) << "created buffer with id " << _buf << std::endl;
@@ -76,7 +76,7 @@ TextPainter::~TextPainter() {
 		boost::mutex::scoped_lock lock(OpenGl::getMutex());
 
 		// delete pixel buffer object
-		glCheck(glDeleteBuffersARB(1, &_buf));
+		glCheck(glDeleteBuffers(1, &_buf));
 	}
 
 #endif
@@ -361,14 +361,14 @@ TextPainter::prepareBuffer() {
 	OpenGl::Guard guard;
 
 	// bind buffer for writing
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
 
 	// discard previous buffer (so we don't have to wait for GPU until we can
 	// map) and create new buffer
-	glCheck(glBufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, _cairoWidth*_cairoHeight*sizeof(cairo_pixel_t), 0, GL_DYNAMIC_DRAW));
+	glCheck(glBufferData(GL_PIXEL_UNPACK_BUFFER, _cairoWidth*_cairoHeight*sizeof(cairo_pixel_t), 0, GL_DYNAMIC_DRAW));
 
 	// bind buffer for reading
-	glCheck(glBindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, _buf));
+	glCheck(glBindBuffer(GL_PIXEL_PACK_BUFFER, _buf));
 
 	LOG_ALL(textpainterlog) << "determine raster position of "
 	                        << _glRoi.minX + 1.0/_lastResolution.x << ", "
@@ -395,7 +395,7 @@ TextPainter::prepareBuffer() {
 			0));
 
 	// map the pixel buffer object
-	unsigned char* p = (unsigned char*)glMapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, GL_WRITE_ONLY_ARB);
+	unsigned char* p = (unsigned char*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
 
 	// wrap the buffer in a cairo surface
 	_surface =
@@ -426,10 +426,10 @@ TextPainter::finishBuffer() {
 	OpenGl::Guard guard;
 
 	// unmap the pixel buffer object
-	glCheck(glUnmapBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB));
+	glCheck(glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER));
 
 	// unbind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 
 #endif
 }
@@ -443,7 +443,7 @@ TextPainter::drawText() {
 	OpenGl::Guard guard;
 
 	// bind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, _buf));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
 
 	// enable alpha blending
 	glEnable(GL_BLEND);
@@ -469,7 +469,7 @@ TextPainter::drawText() {
 	glDisable(GL_BLEND);
 
 	// unbind buffer
-	glCheck(glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, 0));
+	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 
 #endif
 }
