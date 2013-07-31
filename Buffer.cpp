@@ -91,6 +91,9 @@ Buffer::unmap() {
 
 		_mapped = 0;
 
+		// bind buffer
+		glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
+
 		// unmap the pixel buffer object
 		glCheck(glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER));
 	}
