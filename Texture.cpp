@@ -1,9 +1,8 @@
-#include <util/Logger.h>
 #include "Texture.h"
 
-logger::LogChannel texturelog("texturelog", "[Texture] ");
-
 namespace gui {
+
+logger::LogChannel Texture::texturelog("texturelog", "[Texture] ");
 
 Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	_format(format),

@@ -7,6 +7,8 @@
 
 #include <gui/OpenGl.h>
 #include <gui/OpenGlTraits.h>
+#include <util/rect.hpp>
+#include <util/Logger.h>
 
 #include "Buffer.h"
 
@@ -34,19 +36,82 @@ public:
 	virtual ~Texture();
 	
 	/**
-	 * Load texture data from an array of values.
+	 * Load texture data from an iterable sequence.
 	 *
 	 * @param begin An input iterator to the beginning of the data. The caller
 	 *              has to make sure that the data contains at least
 	 *              width*height elements. Each element is supposed to represent
 	 *              a pixel, e.g., for RGB each element shoud contain
 	 *              three values.
+	 *
+	 * @param scale
+	 *              A factor to scale the provided intensity values with.
+	 *
+	 * @param bias
+	 *              An offset to be added to the scaled intensity values.
 	 */
 	template <typename InputIterator>
 	void loadData(InputIterator begin, float scale = 1.0f, float bias = 0.0f);
 
 	/**
+	 * Load texture data from an array of values.
+	 *
+	 * @param data
+	 *             A pointer to the beginning of the data. The caller
+	 *             has to make sure that the data contains at least
+	 *             width*height elements. Each element is supposed to represent
+	 *             a pixel, e.g., for RGB each element shoud contain
+	 *             three values.
+	 *
+	 * @param scale
+	 *              A factor to scale the provided intensity values with.
+	 *
+	 * @param bias
+	 *              An offset to be added to the scaled intensity values.
+	 */
+	template <typename PixelType>
+	void loadData(PixelType* data, float scale = 1.0f, float bias = 0.0f);
+
+	/**
+	 * Load texture data from an array of values.
+	 *
+	 * @param data
+	 *             A pointer to the beginning of the data. The caller
+	 *             has to make sure that the data contains at least
+	 *             width*height elements. Each element is supposed to represent
+	 *             a pixel, e.g., for RGB each element shoud contain
+	 *             three values.
+	 *
+	 * @param region
+	 *              The subregion of the texture in pixels, that should be 
+	 *              filled with the content of data.
+	 *
+	 * @param scale
+	 *              A factor to scale the provided intensity values with.
+	 *
+	 * @param bias
+	 *              An offset to be added to the scaled intensity values.
+	 */
+	template <typename PixelType>
+	void loadData(PixelType* data, const util::rect<unsigned int>& region, float scale = 1.0f, float bias = 0.0f);
+
+	/**
 	 * Load texture data from a buffer.
+	 *
+	 * @param biuffer
+	 *              The buffer to load the data from.
+	 *
+	 * @param offsetx
+	 *              The x-offset into the textures data for the buffers content.
+	 *
+	 * @param offsety
+	 *              The y-offset into the textures data for the buffers content.
+	 *
+	 * @param scale
+	 *              A factor to scale the provided intensity values with.
+	 *
+	 * @param bias
+	 *              An offset to be added to the scaled intensity values.
 	 */
 	void loadData(const Buffer& buffer, int offsetx = 0, int offsety = 0, float scale = 1.0f, float bias = 0.0f);
 
@@ -92,6 +157,8 @@ public:
 	void unmap(float scale = 1.0f, float bias = 0.0f);
 
 private:
+
+	static logger::LogChannel texturelog;
 
 	// the OpenGL target of the texture
 	GLenum _target;
@@ -216,6 +283,11 @@ Texture::loadData(InputIterator data, float scale, float bias) {
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
 
+	// update texture
+	LOG_ALL(texturelog)
+			<< "updating texture " << _width << "x" << _height
+			<< " from an iterable sequence" << std::endl;
+
 	pixel_type* p = map<pixel_type>();
 
 	if (p) {
@@ -225,6 +297,93 @@ Texture::loadData(InputIterator data, float scale, float bias) {
 	}
 
 	unmap<pixel_type>(scale, bias);
+}
+
+template <typename PixelType>
+void
+Texture::loadData(PixelType* data, float scale, float bias) {
+
+	// get the appropriate OpenGL format and type for this pixel type
+	GLenum format = detail::pixel_format_traits<PixelType>::gl_format;
+	GLenum type   = detail::pixel_format_traits<PixelType>::gl_type;
+
+	////////////////////
+	// update texture //
+	////////////////////
+
+	// bind texture
+	bind();
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   scale));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, scale));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  scale));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    bias));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  bias));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   bias));
+
+	// update texture
+	LOG_ALL(texturelog) << "updating texture " << _width << "x" << _height << std::endl;
+
+	glCheck(glTexImage2D(GL_TEXTURE_2D, 0, _format, _width, _height, 0, format, type, data));
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   1.0));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, 1.0));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  1.0));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    0.0));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  0.0));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   0.0));
+
+	// unbind texture
+	unbind();
+}
+
+template <typename PixelType>
+void
+Texture::loadData(PixelType* data, const util::rect<unsigned int>& region, float scale, float bias) {
+
+	int xoffset = region.minX;
+	int yoffset = region.minY;
+	int width   = region.width();
+	int height  = region.height();
+
+	// get the appropriate OpenGL format and type for this pixel type
+	GLenum format = detail::pixel_format_traits<PixelType>::gl_format;
+	GLenum type   = detail::pixel_format_traits<PixelType>::gl_type;
+
+	////////////////////
+	// update texture //
+	////////////////////
+
+	// bind texture
+	bind();
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   scale));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, scale));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  scale));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    bias));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  bias));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   bias));
+
+	// update texture
+	LOG_ALL(texturelog)
+			<< "updating texture " << _width << "x" << _height
+			<< " within " << region << std::endl;
+
+	glCheck(glTexSubImage2D(GL_TEXTURE_2D, 0, xoffset, yoffset, width, height, format, type, data));
+
+	// set color/intensity scale and bias
+	glCheck(glPixelTransferf(GL_RED_SCALE,   1.0));
+	glCheck(glPixelTransferf(GL_GREEN_SCALE, 1.0));
+	glCheck(glPixelTransferf(GL_BLUE_SCALE,  1.0));
+	glCheck(glPixelTransferf(GL_RED_BIAS,    0.0));
+	glCheck(glPixelTransferf(GL_GREEN_BIAS,  0.0));
+	glCheck(glPixelTransferf(GL_BLUE_BIAS,   0.0));
+
+	// unbind texture
+	unbind();
 }
 
 } // namespcae gui
