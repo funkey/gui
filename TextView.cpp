@@ -34,7 +34,7 @@ TextView::getText() {
 }
 
 void
-TextView::onUpdate(const pipeline::Update& signal) {
+TextView::onUpdate(const pipeline::Update& /*signal*/) {
 
 	LOG_ALL(textviewlog) << "got an update signal" << std::endl;
 

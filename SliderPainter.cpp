@@ -4,9 +4,9 @@
 namespace gui {
 
 SliderPainter::SliderPainter(double min, double max, double value) :
+	_value(value),
 	_min(min),
 	_max(max),
-	_value(value),
 	_highlight(false) {
 
 	setSize(0, 0, 100, 10);
@@ -30,8 +30,8 @@ SliderPainter::setHighlight(bool highlight) {
 
 bool
 SliderPainter::draw(
-		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::rect<double>&  /*roi*/,
+		const util::point<double>& /*resolution*/) {
 
 	if (_highlight)
 		glColor4f(1.0, 0.75, 0.75, 0.5);

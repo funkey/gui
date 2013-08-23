@@ -24,8 +24,8 @@ RecordablePainter::~RecordablePainter() {
 
 bool
 RecordablePainter::draw(
-		const util::rect<double>&  roi,
-		const util::point<double>& res) {
+		const util::rect<double>&  /*roi*/,
+		const util::point<double>& /*res*/) {
 
 	LOG_ALL(recordablepainterlog) << getName() << " redrawing display list " << _displayList << std::endl;
 

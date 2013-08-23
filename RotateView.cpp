@@ -45,7 +45,7 @@ RotateView::RotateView() :
 }
 
 void
-RotateView::onInputSet(const pipeline::InputSet<Painter>& signal) {
+RotateView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
 
 	LOG_ALL(rotateviewlog) << "got a new painter" << std::endl;
 
@@ -58,20 +58,20 @@ RotateView::onInputSet(const pipeline::InputSet<Painter>& signal) {
 }
 
 void
-RotateView::onModified(const pipeline::Modified& signal) {
+RotateView::onModified(const pipeline::Modified& /*signal*/) {
 
 	// just pass this signal on
 	_modified();
 }
 
 void
-RotateView::onContentChanged(const ContentChanged& signal) {
+RotateView::onContentChanged(const ContentChanged& /*signal*/) {
 
 	_contentChanged();
 }
 
 void
-RotateView::onSizeChanged(const SizeChanged& signal) {
+RotateView::onSizeChanged(const SizeChanged& /*signal*/) {
 
 	_rotated->updateSize();
 
@@ -194,10 +194,6 @@ RotateView::onMouseMove(MouseMove& signal) {
 	}
 
 	LOG_ALL(rotateviewlog) << "I am in dragging mode" << std::endl;
-
-	double amp = 1.0;
-	if (signal.modifiers & keys::ControlDown)
-		amp = 10.0;
 
 	// mouse is dragged
 	if (signal.modifiers & buttons::LeftDown) {

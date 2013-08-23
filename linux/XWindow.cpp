@@ -250,7 +250,7 @@ XWindow::processEvents() {
 			LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
 			LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
 			LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
-			for (unsigned int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
+			for (int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
 				if (XIMaskIsSet(deviceEvent->valuators.mask, i))
 					LOG_ALL(xlog) << "[XWindow] \t" << i << ": " << *val++ << std::endl;
 
@@ -733,8 +733,9 @@ XWindow::getInputType(int deviceid) {
 
 	// default
 	_inputTypes[deviceid] = Mouse;
-
 	XIFreeDeviceInfo(info);
+
+	return Mouse;
 }
 
 util::point<double>

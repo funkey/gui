@@ -186,6 +186,8 @@ ContainerPainter::operator=(const ContainerPainter& other) {
 
 	setSize(other.getSize());
 	_painterOffsets = other._painterOffsets;
+
+	return *this;
 }
 
 } // namespace gui

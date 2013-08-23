@@ -18,7 +18,7 @@ NamedView::NamedView(const std::string& name) :
 }
 
 void
-NamedView::onInputSet(const pipeline::InputSetBase& signal) {
+NamedView::onInputSet(const pipeline::InputSetBase& /*signal*/) {
 
 	LOG_DEBUG(namedviewlog) << "content was set, updating container" << std::endl;
 

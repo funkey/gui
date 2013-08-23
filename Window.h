@@ -152,7 +152,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processFingerUpEvent(
+	void processFingerUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -164,7 +164,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processFingerDownEvent(
+	void processFingerDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -176,7 +176,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processFingerMoveEvent(
+	void processFingerMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			int                        id,
@@ -187,7 +187,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenUpEvent(
+	void processPenUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -199,7 +199,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenDownEvent(
+	void processPenDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -211,7 +211,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenMoveEvent(
+	void processPenMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			double                     pressure,
@@ -222,7 +222,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenInEvent(
+	void processPenInEvent(
 			unsigned long              timestamp);
 
 	/**
@@ -230,7 +230,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenOutEvent(
+	void processPenOutEvent(
 			unsigned long              timestamp);
 
 	/**
@@ -238,7 +238,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processPenAwayEvent(
+	void processPenAwayEvent(
 			unsigned long              timestamp);
 
 	/**
@@ -246,7 +246,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processButtonUpEvent(
+	void processButtonUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -257,7 +257,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processButtonDownEvent(
+	void processButtonDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -268,7 +268,7 @@ private:
 	 *
 	 * @param event The input event.
 	 */
-	bool processMouseMoveEvent(
+	void processMouseMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			const Modifiers&           modifiers);

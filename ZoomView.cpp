@@ -85,7 +85,7 @@ ZoomView::filter(PointerSignal& signal) {
 }
 
 void
-ZoomView::onInputSet(const pipeline::InputSet<Painter>& signal) {
+ZoomView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
 
 	LOG_ALL(zoomviewlog) << "got a new painter" << std::endl;
 
@@ -101,13 +101,13 @@ ZoomView::onInputSet(const pipeline::InputSet<Painter>& signal) {
 }
 
 void
-ZoomView::onContentChanged(const ContentChanged& signal) {
+ZoomView::onContentChanged(const ContentChanged& /*signal*/) {
 
 	_contentChanged();
 }
 
 void
-ZoomView::onSizeChanged(const SizeChanged& signal) {
+ZoomView::onSizeChanged(const SizeChanged& /*signal*/) {
 
 	_sizeChanged(SizeChanged(_zoomed->getSize()));
 

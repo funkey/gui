@@ -84,7 +84,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processFingerUpEvent(
+	virtual void processFingerUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -96,7 +96,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processFingerDownEvent(
+	virtual void processFingerDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -108,7 +108,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processFingerMoveEvent(
+	virtual void processFingerMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			int                        id,
@@ -119,7 +119,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenUpEvent(
+	virtual void processPenUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -131,7 +131,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenDownEvent(
+	virtual void processPenDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -143,7 +143,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenMoveEvent(
+	virtual void processPenMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			double                     pressure,
@@ -154,7 +154,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenInEvent(
+	virtual void processPenInEvent(
 			unsigned long              timestamp) = 0;
 
 	/**
@@ -162,7 +162,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenOutEvent(
+	virtual void processPenOutEvent(
 			unsigned long              timestamp) = 0;
 
 	/**
@@ -170,7 +170,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processPenAwayEvent(
+	virtual void processPenAwayEvent(
 			unsigned long              timestamp) = 0;
 
 	/**
@@ -178,7 +178,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processButtonUpEvent(
+	virtual void processButtonUpEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -189,7 +189,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processButtonDownEvent(
+	virtual void processButtonDownEvent(
 			unsigned long              timestamp,
 			const buttons::Button&     button,
 			const util::point<double>& position,
@@ -200,7 +200,7 @@ public:
 	 *
 	 * @param event The input event.
 	 */
-	virtual bool processMouseMoveEvent(
+	virtual void processMouseMoveEvent(
 			unsigned long              timestamp,
 			const util::point<double>& position,
 			const Modifiers&           modifiers) = 0;

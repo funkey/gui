@@ -152,7 +152,7 @@ Window::processKeyDownEvent(const keys::Key& key, const Modifiers& modifiers) {
 	_keyDown(signal);
 }
 
-bool
+void
 Window::processFingerUpEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -164,7 +164,7 @@ Window::processFingerUpEvent(
 	_fingerUp(signal);
 }
 
-bool
+void
 Window::processFingerDownEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -176,7 +176,7 @@ Window::processFingerDownEvent(
 	_fingerDown(signal);
 }
 
-bool
+void
 Window::processFingerMoveEvent(
 		unsigned long              timestamp,
 		const util::point<double>& position,
@@ -187,7 +187,7 @@ Window::processFingerMoveEvent(
 	_fingerMove(signal);
 }
 
-bool
+void
 Window::processPenUpEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -199,7 +199,7 @@ Window::processPenUpEvent(
 	_penUp(signal);
 }
 
-bool
+void
 Window::processPenDownEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -211,7 +211,7 @@ Window::processPenDownEvent(
 	_penDown(signal);
 }
 
-bool
+void
 Window::processPenMoveEvent(
 		unsigned long              timestamp,
 		const util::point<double>& position,
@@ -224,28 +224,28 @@ Window::processPenMoveEvent(
 	_penMove(signal);
 }
 
-bool
+void
 Window::processPenInEvent(unsigned long timestamp) {
 
 	PenIn signal(timestamp);
 	_penIn(signal);
 }
 
-bool
+void
 Window::processPenOutEvent(unsigned long timestamp) {
 
 	PenOut signal(timestamp);
 	_penOut(signal);
 }
 
-bool
+void
 Window::processPenAwayEvent(unsigned long timestamp) {
 
 	PenAway signal(timestamp);
 	_penAway(signal);
 }
 
-bool
+void
 Window::processButtonUpEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -256,7 +256,7 @@ Window::processButtonUpEvent(
 	_mouseUp(signal);
 }
 
-bool
+void
 Window::processButtonDownEvent(
 		unsigned long              timestamp,
 		const buttons::Button&     button,
@@ -267,7 +267,7 @@ Window::processButtonDownEvent(
 	_mouseDown(signal);
 }
 
-bool
+void
 Window::processMouseMoveEvent(
 		unsigned long              timestamp,
 		const util::point<double>& position,
@@ -397,19 +397,19 @@ Window::saveFrame() {
 }
 
 void
-Window::onInputAdded(const pipeline::InputAdded<gui::Painter>& signal) {
+Window::onInputAdded(const pipeline::InputAdded<gui::Painter>& /*signal*/) {
 
 	setDirty();
 }
 
 void
-Window::onModified(const pipeline::Modified& signal) {
+Window::onModified(const pipeline::Modified& /*signal*/) {
 
 	setDirty();
 }
 
 void
-Window::onSizeChanged(const SizeChanged& signal) {
+Window::onSizeChanged(const SizeChanged& /*signal*/) {
 
 	// TODO:
 	// Here, we could resize the window to fit the view. However, this should be
@@ -419,7 +419,7 @@ Window::onSizeChanged(const SizeChanged& signal) {
 }
 
 void
-Window::onContentChanged(const ContentChanged& signal) {
+Window::onContentChanged(const ContentChanged& /*signal*/) {
 
 	LOG_ALL(winlog) << "[" << getCaption() << "] received a content change signal" << endl;
 

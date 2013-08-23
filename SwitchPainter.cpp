@@ -30,8 +30,8 @@ SwitchPainter::setHighlight(bool highlight) {
 
 bool
 SwitchPainter::draw(
-		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::rect<double>&  /*roi*/,
+		const util::point<double>& /*resolution*/) {
 
 	double r, g, b, a;
 
