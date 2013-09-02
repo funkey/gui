@@ -3,6 +3,7 @@
 
 #include "GuiSignals.h"
 #include <gui/Keys.h>
+#include <gui/Modifiers.h>
 
 namespace gui {
 
