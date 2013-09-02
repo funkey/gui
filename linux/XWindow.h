@@ -106,6 +106,11 @@ private:
 	Modifiers stateToModifiers(unsigned int state);
 
 	/**
+	 * Converts an X button to Modifiers.
+	 */
+	Modifiers buttonsToModifiers(XIButtonState& buttons);
+
+	/**
 	 * Converts an X button to a Button.
 	 */
 	buttons::Button buttonToButton(unsigned int xbutton);

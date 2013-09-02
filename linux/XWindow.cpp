@@ -368,7 +368,7 @@ XWindow::processEvents() {
 
 					case XI_Motion:
 
-						modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+						modifiers = static_cast<Modifiers>(stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked) | buttonsToModifiers(deviceEvent->buttons));
 
 						if (inputType == Mouse) {
 
@@ -679,16 +679,36 @@ XWindow::stateToModifiers(unsigned int state) {
 	if (state & ControlMask)
 		modifiers = static_cast<Modifiers>(modifiers | keys::ControlDown);
 
-	if (state & Button1Mask)
-		modifiers = static_cast<Modifiers>(modifiers | buttons::LeftDown);
-
-	if (state & Button2Mask)
-		modifiers = static_cast<Modifiers>(modifiers | buttons::MiddleDown);
-
-	if (state & Button3Mask)
-		modifiers = static_cast<Modifiers>(modifiers | buttons::RightDown);
-
 	// TODO: add more modifiers
+
+	return modifiers;
+}
+
+Modifiers
+XWindow::buttonsToModifiers(XIButtonState& buttons) {
+
+	Modifiers modifiers = NoModifier;
+
+	for (int i = 0; i <= 3; i++) {
+
+		if ((buttons.mask[(i)>>3] & (1 << ((i)&7)))) {
+
+			switch(i) {
+
+				case 1:
+					modifiers = static_cast<Modifiers>(modifiers | buttons::LeftDown);
+					break;
+
+				case 2:
+					modifiers = static_cast<Modifiers>(modifiers | buttons::MiddleDown);
+					break;
+
+				case 3:
+					modifiers = static_cast<Modifiers>(modifiers | buttons::RightDown);
+					break;
+			}
+		}
+	}
 
 	return modifiers;
 }
