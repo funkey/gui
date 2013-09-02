@@ -21,7 +21,7 @@ TextPainter::TextPainter(string text) :
 	_cairoHeight(1),
 	_padding(_textSize/2),
 	_textColor(4, 1.0),
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 	_context(0),
 	_surface(0),
 	_fontOptions(0),
@@ -33,7 +33,7 @@ TextPainter::TextPainter(string text) :
 	_lastResolution(1, 1),
 	_lastRoi(0, 0, 0, 0) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
@@ -58,7 +58,7 @@ TextPainter::TextPainter(string text) :
 
 TextPainter::~TextPainter() {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	if (_context)
 		cairo_destroy(_context);
@@ -87,7 +87,7 @@ TextPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	boost::mutex::scoped_lock lock(_cairoMutex);
 
@@ -122,7 +122,7 @@ TextPainter::draw(
 void
 TextPainter::setText(std::string text) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	_text = text;
 
@@ -136,7 +136,7 @@ TextPainter::setText(std::string text) {
 void
 TextPainter::setTextSize(double size) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	_textSize = size;
 	_padding  = size/2;
@@ -151,7 +151,7 @@ TextPainter::setTextSize(double size) {
 void
 TextPainter::setTextColor(double r, double g, double b, double a) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	_textColor[0] = r;
 	_textColor[1] = g;
@@ -166,7 +166,7 @@ TextPainter::computeSize(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	LOG_ALL(textpainterlog) << "[computeSize] computing size..." << std::endl;
 
@@ -323,7 +323,7 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 void
 TextPainter::setFont() {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 	cairo_select_font_face(
 			_context,
 			"sans-serif",
@@ -346,7 +346,7 @@ TextPainter::setFont() {
 bool
 TextPainter::prepareBuffer() {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	if (_cairoWidth <= 0 || _cairoHeight <= 0)
 		return false;
@@ -420,7 +420,7 @@ TextPainter::prepareBuffer() {
 void
 TextPainter::finishBuffer() {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
@@ -437,7 +437,7 @@ TextPainter::finishBuffer() {
 void
 TextPainter::drawText() {
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 
 	// ensure a valid opengl context
 	OpenGl::Guard guard;

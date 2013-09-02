@@ -1,4 +1,6 @@
-#if HAVE_PNG
+#include "config.h"
+
+#ifdef HAVE_PNG
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
 using namespace boost::gil;
@@ -368,7 +370,7 @@ Window::requestFrameSave() {
 void
 Window::saveFrame() {
 
-#if HAVE_PNG
+#ifdef HAVE_PNG
 	if (closed())
 		return;
 

@@ -76,7 +76,7 @@ private:
 	// the color of the text (rgba)
 	std::vector<double> _textColor;
 
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
 	// the cairo context
 	cairo_t*            _context;
 
