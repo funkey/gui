@@ -63,7 +63,7 @@ public:
 	 *
 	 * Platform dependent.
 	 */
-	virtual bool processEvents() = 0;
+	virtual void processEvents() = 0;
 
 	/**
 	 * Callback for input events.

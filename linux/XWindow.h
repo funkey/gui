@@ -56,7 +56,7 @@ public:
 	 * This method should be called repeatedly to ensure proper redrawing and
 	 * user interaction.
 	 */
-	bool processEvents();
+	void processEvents();
 
 	/**
 	 * Provides access to the X11 display to create an OpenGl context.
