@@ -10,19 +10,13 @@ Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	_height(height),
 	_texWidth(1),
 	_texHeight(1),
-	_tex(0),
-	_buf(0),
-	_bufferDirty(false),
-	_mapped(0) {
+	_tex(0) {
 
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
 
 	// create the OpenGl texture
 	glCheck(glGenTextures(1, &_tex));
-
-	// create a pixel buffer object for the texture
-	glCheck(glGenBuffers(1, &_buf));
 
 	// setup texture
 	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
@@ -31,7 +25,7 @@ Texture::Texture(GLsizei width, GLsizei height, GLint format) :
 	glCheck(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP));
 	glCheck(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP));
 
-	// resize texture and buffer
+	// resize texture
 	resize(_width, _height);
 }
 
@@ -39,9 +33,6 @@ Texture::~Texture()
 {
 	// make sure we have a valid OpenGl context
 	OpenGl::Guard guard;
-
-	// delete buffer
-	glCheck(glDeleteBuffers(1, &_buf));
 
 	// delete texture
 	glCheck(glDeleteTextures(1, &_tex));
@@ -55,20 +46,6 @@ Texture::resize(GLsizei width, GLsizei height) {
 
 	_width  = width;
 	_height = height;
-
-	// bind buffer
-	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
-
-	// create new buffer
-	unsigned int size = _width*_height;
-	if (_format == GL_RGB)
-		size *= 3;
-	else if (_format == GL_RGBA)
-		size *= 4;
-	glCheck(glBufferData(GL_PIXEL_UNPACK_BUFFER, size, 0, GL_DYNAMIC_DRAW));
-
-	// unbind buffer
-	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
 
 	// bind texture
 	glCheck(glBindTexture(GL_TEXTURE_2D, _tex));
@@ -149,9 +126,6 @@ Texture::loadData(const Buffer& buffer, int xoffset, int yoffset, float scale, f
 
 	// unbind buffer
 	buffer.unbind();
-
-	// the texture was changed, but _buf wasn't
-	_bufferDirty = true;
 }
 
 } // namespace gui
