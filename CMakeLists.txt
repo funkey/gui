@@ -1,7 +1,1 @@
-# find all files constituting this library
-file(GLOB guifiles
-  *.cpp
-  linux/*.cpp)
-
-# this is a library
-add_library(gui ${guifiles})
+define_module(gui LIBRARY INCLUDES util signals pipeline LINKS x11 opengl glew glut cairo vigra boost)
