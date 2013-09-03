@@ -162,6 +162,8 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 XWindow::~XWindow() {
 
+	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] destructing..." << std::endl;
+
 	close();
 
 	// destroy input context
@@ -189,6 +191,8 @@ XWindow::~XWindow() {
 	// close X11 connection
 	XCloseDisplay(_display);
 	_display = 0;
+
+	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] destructed" << std::endl;
 }
 
 void
@@ -574,7 +578,10 @@ XWindow::close() {
 
 	_closed = true;
 
-	// TODO: unmap window
+	LOG_DEBUG(xlog) << "unmapping window " << getCaption() << std::endl;
+
+	XUnmapWindow(_display, _window);
+	XFlush(_display);
 }
 
 bool
