@@ -581,7 +581,9 @@ XWindow::close() {
 	LOG_DEBUG(xlog) << "unmapping window " << getCaption() << std::endl;
 
 	XUnmapWindow(_display, _window);
+	XDestroyWindow(_display, _window);
 	XFlush(_display);
+	_window = 0;
 }
 
 bool
