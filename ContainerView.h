@@ -45,15 +45,9 @@ public:
 
 		_painters.registerBackwardSlot(_keyDown);
 		_painters.registerBackwardSlot(_keyUp);
-		_painters.registerBackwardSlots(_mouseMoves);
-		_painters.registerBackwardSlots(_mouseDowns);
-		_painters.registerBackwardSlots(_mouseUps);
 
 		_container.registerForwardCallback(&ContainerView::onKeyDown, this);
 		_container.registerForwardCallback(&ContainerView::onKeyUp, this);
-		_container.registerForwardCallback(&ContainerView::onMouseMove, this);
-		_container.registerForwardCallback(&ContainerView::onMouseDown, this);
-		_container.registerForwardCallback(&ContainerView::onMouseUp, this);
 
 		_container.registerForwardSlot(_contentChanged);
 		_container.registerForwardSlot(_sizeChanged);
@@ -67,9 +61,10 @@ private:
 		_container->setOffsets(_offsets);
 	}
 
-	bool filter(PointerSignal& signal) {
+	bool filter(PointerSignal& signal, unsigned int i) {
 
-		LOG_ALL(containerviewlog) << getName() << ": filter pointer signal at " << signal.position << std::endl;
+		signal.position -= _offsets[i];
+
 		return true;
 	}
 
@@ -139,64 +134,6 @@ private:
 		_keyUp(signal);
 	}
 
-	void onMouseMove(MouseMove& signal) {
-
-		for (unsigned int i = 0; i < _mouseMoves.size(); i++) {
-
-			MouseMove offsetSignal = signal;
-
-			offsetSignal.position -= _offsets[i];
-
-			_mouseMoves[i](offsetSignal);
-
-			if (offsetSignal.processed) {
-
-				signal.processed = true;
-				break;
-			}
-		}
-	}
-
-	void onMouseDown(MouseDown& signal) {
-
-		for (unsigned int i = 0; i < _mouseDowns.size(); i++) {
-
-			MouseDown offsetSignal = signal;
-
-			offsetSignal.position -= _offsets[i];
-
-			// mouse down events are only forwarded to painters under the cursor
-			if (!_painters[i]->getSize().contains(offsetSignal.position))
-				continue;
-
-			_mouseDowns[i](offsetSignal);
-
-			if (offsetSignal.processed) {
-
-				signal.processed = true;
-				break;
-			}
-		}
-	}
-
-	void onMouseUp(MouseUp& signal) {
-
-		for (unsigned int i = 0; i < _mouseUps.size(); i++) {
-
-			MouseUp offsetSignal = signal;
-
-			offsetSignal.position -= _offsets[i];
-
-			_mouseUps[i](offsetSignal);
-
-			if (offsetSignal.processed) {
-
-				signal.processed = true;
-				break;
-			}
-		}
-	}
-
 	void updateOffsets() {
 
 		LOG_ALL(containerviewlog) << getName() << ": " << "updating offsets of painters:" << std::endl;
@@ -215,9 +152,6 @@ private:
 
 	signals::Slot<const KeyDown>          _keyDown;
 	signals::Slot<const KeyUp>            _keyUp;
-	signals::Slots<const MouseMove>       _mouseMoves;
-	signals::Slots<const MouseDown>       _mouseDowns;
-	signals::Slots<const MouseUp>         _mouseUps;
 
 	// forward signals
 
