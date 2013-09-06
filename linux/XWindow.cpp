@@ -328,6 +328,10 @@ XWindow::processEvents() {
 
 						if (inputType == Mouse) {
 
+							LOG_ALL(xlog) << "[XWindow] window "
+										  << " received a mouse down event at "
+										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
+
 							processButtonDownEvent(
 									deviceEvent->time,
 									button,
@@ -352,6 +356,10 @@ XWindow::processEvents() {
 						modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
 
 						if (inputType == Mouse) {
+
+							LOG_ALL(xlog) << "[XWindow] window "
+										  << " received a mouse up event at "
+										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
 
 							processButtonUpEvent(
 									deviceEvent->time,
