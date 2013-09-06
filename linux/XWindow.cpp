@@ -262,11 +262,12 @@ XWindow::processEvents() {
 
 				InputType inputType = getInputType(deviceEvent->deviceid);
 
-				LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
-				LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
-				LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
-				LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
-				LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
+				//LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
+				//LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
+				//LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+				//LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
+				//LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
+
 				for (int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
 					if (XIMaskIsSet(deviceEvent->valuators.mask, i))
 						LOG_ALL(xlog) << "[XWindow] \t" << i << ": " << *val++ << std::endl;
@@ -375,6 +376,10 @@ XWindow::processEvents() {
 						modifiers = static_cast<Modifiers>(stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked) | buttonsToModifiers(deviceEvent->buttons));
 
 						if (inputType == Mouse) {
+
+							LOG_ALL(xlog) << "[XWindow] window "
+										  << " received a mouse motion event at "
+										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
 
 							processMouseMoveEvent(
 									deviceEvent->time,

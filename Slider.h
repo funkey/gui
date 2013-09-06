@@ -41,7 +41,7 @@ Slider<Precision>::Slider(std::string name, Precision min, Precision max) :
 	_textView(boost::make_shared<TextView>(name + ":")),
 	_sliderImpl(boost::make_shared<SliderImpl<Precision> >(min, max, min)),
 	_valueView(boost::make_shared<NumberView<Precision> >()),
-	_container(boost::make_shared<ContainerView<HorizontalPlacing> >()) {
+	_container(boost::make_shared<ContainerView<HorizontalPlacing> >("slider")) {
 
 	// setup internal pipeline connections
 	_valueView->setInput(_sliderImpl->getOutput("value"));
@@ -58,7 +58,7 @@ Slider<Precision>::Slider(std::string name, Precision min, Precision max, Precis
 	_textView(boost::make_shared<TextView>(name + ":")),
 	_sliderImpl(boost::make_shared<SliderImpl<Precision> >(min, max, value)),
 	_valueView(boost::make_shared<NumberView<Precision> >()),
-	_container(boost::make_shared<ContainerView<HorizontalPlacing> >()) {
+	_container(boost::make_shared<ContainerView<HorizontalPlacing> >("slider")) {
 
 	// setup internal pipeline connections
 	_valueView->setInput(_sliderImpl->getOutput("value"));

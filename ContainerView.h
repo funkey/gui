@@ -67,11 +67,15 @@ private:
 		_container->setOffsets(_offsets);
 	}
 
-	bool filter(PointerSignal& /*signal*/) { return true; }
+	bool filter(PointerSignal& signal) {
+
+		LOG_ALL(containerviewlog) << getName() << ": filter pointer signal at " << signal.position << std::endl;
+		return true;
+	}
 
 	void onPainterAdded(const pipeline::InputAdded<Painter>& signal) {
 
-		LOG_ALL(containerviewlog) << getName() << ": " << "got a new painter " << typeName(*signal.getData()) << std::endl;
+		LOG_ALL(containerviewlog) << getName() << ": got a new painter " << typeName(*signal.getData()) << std::endl;
 
 		if (!_container)
 			_container.createData();

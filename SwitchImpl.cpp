@@ -50,9 +50,13 @@ SwitchImpl::onMouseUp(MouseUp& signal) {
 void
 SwitchImpl::onMouseMove(MouseMove& signal) {
 
+	LOG_ALL(switchlog) << "mouse moved at " << signal.position << std::endl;
+
 	const util::rect<double>& size = _painter->getSize();
 
 	if (size.contains(signal.position)) {
+
+		LOG_ALL(switchlog) << "...inside switch" << std::endl;
 
 		if (_mouseOver == false) {
 
@@ -64,6 +68,8 @@ SwitchImpl::onMouseMove(MouseMove& signal) {
 		}
 
 	} else {
+
+		LOG_ALL(switchlog) << "...outside switch" << std::endl;
 
 		if (_mouseOver == true) {
 
