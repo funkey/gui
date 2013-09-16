@@ -688,7 +688,11 @@ XWindow::keycodeToKey(unsigned int keycode) {
 		case 58:
 			return keys::M;
 
+		case 23:
+			return keys::Tab;
+
 		default:
+			LOG_ALL(xlog) << "received unknown key code: " << keycode << std::endl;
 			return keys::NoKey;
 	}
 }
