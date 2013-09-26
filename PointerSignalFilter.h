@@ -15,7 +15,13 @@ class PointerSignalFilter :
 				pipeline::FilterSignal<MouseUp,
 				pipeline::FilterSignal<MouseDown,
 				pipeline::FilterSignal<MouseMove,
-				pipeline::FilterSignalsAs<PointerSignal> > > > > {};
+				pipeline::FilterSignal<FingerUp,
+				pipeline::FilterSignal<FingerDown,
+				pipeline::FilterSignal<FingerMove,
+				pipeline::FilterSignal<PenUp,
+				pipeline::FilterSignal<PenDown,
+				pipeline::FilterSignal<PenMove,
+				pipeline::FilterSignalsAs<PointerSignal> > > > > > > > > > > {};
 
 } // namespace gui
 
