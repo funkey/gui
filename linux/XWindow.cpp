@@ -432,7 +432,7 @@ XWindow::processEvents() {
 					case ClientMessage:
 						LOG_ALL(xlog) << "[XWindow] window "
 									  << " received a client message" << endl;
-						if (event.xclient.data.l[0] == _deleteWindow) {
+						if ((Atom)event.xclient.data.l[0] == _deleteWindow) {
 
 							processCloseEvent();
 
