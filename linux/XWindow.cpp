@@ -106,7 +106,7 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	// register for events
 	XIEventMask eventmask;
 
-	eventmask.deviceid = XIAllMasterDevices;
+	eventmask.deviceid = XIAllDevices;
 	eventmask.mask_len = XIMaskLen(XI_LASTEVENT);
 	eventmask.mask = (unsigned char*)calloc(eventmask.mask_len, sizeof(unsigned char));
 	/* now set the mask */
