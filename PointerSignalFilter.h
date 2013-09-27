@@ -21,7 +21,9 @@ class PointerSignalFilter :
 				pipeline::FilterSignal<PenUp,
 				pipeline::FilterSignal<PenDown,
 				pipeline::FilterSignal<PenMove,
-				pipeline::FilterSignalsAs<PointerSignal> > > > > > > > > > > {};
+				pipeline::FilterSignal<PenIn,
+				pipeline::FilterSignal<PenOut,
+				pipeline::FilterSignalsAs<PointerSignal> > > > > > > > > > > > > {};
 
 } // namespace gui
 
