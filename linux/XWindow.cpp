@@ -705,6 +705,9 @@ XWindow::stateToModifiers(unsigned int state) {
 	if (state & ControlMask)
 		modifiers = static_cast<Modifiers>(modifiers | keys::ControlDown);
 
+	if (state & ShiftMask)
+		modifiers = static_cast<Modifiers>(modifiers | keys::ShiftDown);
+
 	// TODO: add more modifiers
 
 	return modifiers;
