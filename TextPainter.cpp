@@ -53,6 +53,8 @@ TextPainter::TextPainter(string text) :
 	// override system default antialiasing method
 	cairo_font_options_set_antialias(_fontOptions, CAIRO_ANTIALIAS_DEFAULT);
 
+	computeSize(_lastRoi, _lastResolution);
+
 #endif
 }
 
