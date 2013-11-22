@@ -8,7 +8,7 @@ LogChannel switchlog("switchlog", "");
 namespace gui {
 
 SwitchImpl::SwitchImpl(bool value) :
-	_value(value),
+	_value(boost::make_shared<bool>(value)),
 	_painter(new SwitchPainter(value)),
 	_mouseOver(false) {
 

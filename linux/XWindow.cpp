@@ -7,6 +7,7 @@
 #include <gui/linux/XWindow.h>
 #include <gui/Modifiers.h>
 #include <util/Logger.h>
+#include <util/foreach.h>
 
 using std::endl;
 using std::abs;
@@ -36,6 +37,9 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 	_display = XOpenDisplay(0);
 	_screen  = DefaultScreen(_display);
+
+	_screenResolution.x = DisplayWidth(_display, _screen);
+	_screenResolution.y = DisplayHeight(_display, _screen);
 
 	if (_display == 0)
 		throw "[XWindow] Unable to open display";
@@ -106,7 +110,7 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	// register for events
 	XIEventMask eventmask;
 
-	eventmask.deviceid = XIAllMasterDevices;
+	eventmask.deviceid = XIAllDevices;
 	eventmask.mask_len = XIMaskLen(XI_LASTEVENT);
 	eventmask.mask = (unsigned char*)calloc(eventmask.mask_len, sizeof(unsigned char));
 	/* now set the mask */
@@ -123,7 +127,8 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 	// get the X atom for Wacom serial ID properties -- they tell us whether the 
 	// pen is in proximity
-	_serialIdsProperty = XInternAtom(_display, "Wacom Serial IDs", false);
+	_serialIdsProperty  = XInternAtom(_display, "Wacom Serial IDs", false);
+	_tabletAreaProperty = XInternAtom(_display, "Wacom Tablet Area", false);
 
 	if (mode.hideCursor) {
 
@@ -420,6 +425,8 @@ XWindow::processEvents() {
 						LOG_ALL(xlog) << "[XWindow] window "
 									  << " received a configure notification" << endl;
 						processResizeEvent(event.xconfigure.width, event.xconfigure.height);
+						foreach (int deviceId, _penDevices)
+							configureTabletArea(deviceId);
 						setDirty();
 						break;
 
@@ -432,7 +439,7 @@ XWindow::processEvents() {
 					case ClientMessage:
 						LOG_ALL(xlog) << "[XWindow] window "
 									  << " received a client message" << endl;
-						if (event.xclient.data.l[0] == _deleteWindow) {
+						if ((Atom)event.xclient.data.l[0] == _deleteWindow) {
 
 							processCloseEvent();
 
@@ -535,12 +542,77 @@ XWindow::processPropertyEvent(XIPropertyEvent* propertyEvent) {
 	if (propertyEvent->what == 0) {
 
 		processPenAwayEvent(propertyEvent->time);
+
+		std::vector<int>::iterator i = std::find(_penDevices.begin(), _penDevices.end(), propertyEvent->deviceid);
+
+		if (i != _penDevices.end())
+			_penDevices.erase(i);
+
 		return;
 	}
 
+	if (propertyEvent->property == _tabletAreaProperty)
+		configureTabletArea(propertyEvent->deviceid);
+
 	// we're only interested in the serial IDs
-	if (propertyEvent->property != _serialIdsProperty)
+	if (propertyEvent->property == _serialIdsProperty)
+		processPenStatusEvent(propertyEvent);
+}
+
+void
+XWindow::configureTabletArea(int deviceId) {
+
+	// get the property data
+	unsigned char* data;
+	Atom actualType;
+	int actualFormat;
+	unsigned long numItems, bytesAfter;
+	if (!XIGetProperty(
+			_display,
+			deviceId,
+			_tabletAreaProperty,
+			0,     /* offset */
+			1000,  /* length */
+			false, /* delete property */
+			AnyPropertyType,
+			&actualType,
+			&actualFormat,
+			&numItems,
+			&bytesAfter,
+			&data) == Success) {
+
+		LOG_ERROR(xlog) << "couldn't read property " << XGetAtomName(_display, _tabletAreaProperty) << std::endl;
 		return;
+	}
+
+	// read left, top, right, bottom
+	int area[4];
+
+	// show all the other items
+	unsigned char* ptr = data + actualFormat/8 * 3;
+	for (int i = 0; i < 4; i++) {
+
+		ptr = data + actualFormat/8 * i;
+		area[i] = *((int32_t*)ptr);
+	}
+
+	util::point<int> resolution = getResolution();
+
+	_penSlopeX = (double)resolution.x/(area[2]-area[0]);
+	_penSlopeY = (double)resolution.y/(area[3]-area[1]);
+	_penOffsetX = -_penSlopeX*area[0];
+	_penOffsetY = -_penSlopeY*area[1];
+
+	LOG_DEBUG(xlog) << "tablet area changed to " << area[0] << ", " << area[1] << ", " << area[2] << ", " << area[3] << std::endl;
+	LOG_DEBUG(xlog)
+			<< "for resolution " << resolution.x << "x" << resolution.y
+			<< " pen multiplier is " << _penSlopeX << "x" << _penSlopeY
+			<< ", offset is (" << _penOffsetX << ", " << _penOffsetY << ")"
+			<< std::endl;
+}
+
+void
+XWindow::processPenStatusEvent(XIPropertyEvent* propertyEvent) {
 
 	// get the property data
 	unsigned char* data;
@@ -573,14 +645,6 @@ XWindow::processPropertyEvent(XIPropertyEvent* propertyEvent) {
 		processPenOutEvent(propertyEvent->time);
 	else
 		processPenInEvent(propertyEvent->time);
-
-	// show all the other items
-	//for (int i = 0; i < numItems; i++) {
-
-		//ptr = data + actualFormat/8 * i;
-		//int d = *((int32_t*)ptr);
-		//LOG_ALL(xlog) << "property data item " << i << ": " << d << std::endl;
-	//}
 }
 
 void
@@ -792,6 +856,8 @@ XWindow::getInputType(int deviceid) {
 		} else if (strcasestr(info[i].name, "pen")) {
 
 			LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Pen" << std::endl;
+			_penDevices.push_back(deviceid);
+			configureTabletArea(deviceid);
 
 			_inputTypes[deviceid] = Pen;
 			XIFreeDeviceInfo(info);

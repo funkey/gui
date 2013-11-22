@@ -62,7 +62,7 @@ private:
 
 template <typename Precision>
 SliderImpl<Precision>::SliderImpl(double min, double max, double value) :
-	_value(value),
+	_value(boost::make_shared<double>(value)),
 	_painter(new SliderPainter(min, max, min)),
 	_min(min),
 	_max(max),

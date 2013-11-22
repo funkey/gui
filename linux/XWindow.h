@@ -95,6 +95,10 @@ private:
 	 */
 	void processPropertyEvent(XIPropertyEvent* propertyEvent);
 
+	void configureTabletArea(int deviceId);
+
+	void processPenStatusEvent(XIPropertyEvent* propertyEvent);
+
 	/**
 	 * Converts an X keycode to a Key.
 	 */
@@ -161,8 +165,14 @@ private:
 	// the video mode before the swith to fullscreen
 	int      _previousMode;
 
+	// the current resolution of the screen
+	util::point<int> _screenResolution;
+
 	// map from device ID to input type
 	std::map<int, InputType> _inputTypes;
+
+	// list of input devices of type pen
+	std::vector<int> _penDevices;
 
 	// calibration for the pen
 	double _penSlopeX;
@@ -172,6 +182,9 @@ private:
 
 	// the X11 atom for the wacom id property
 	Atom _serialIdsProperty;
+
+	// the X11 atom for the wacom tablet area
+	Atom _tabletAreaProperty;
 };
 
 } // namespace gui
