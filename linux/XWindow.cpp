@@ -842,7 +842,16 @@ XWindow::getInputType(int deviceid) {
 	int numFound;
 	XIDeviceInfo* info = XIQueryDevice(_display, deviceid, &numFound);
 
+	LOG_ALL(xlog) << "new input device:" << std::endl;
+
 	for (int i = 0; i < numFound; i++) {
+
+		LOG_ALL(xlog) << "\tid         : " << info[i].deviceid << std::endl;
+		LOG_ALL(xlog) << "\tname       : " << info[i].name << std::endl;
+		LOG_ALL(xlog) << "\tuse        : " << info[i].use << std::endl;
+		LOG_ALL(xlog) << "\tattachment : " << info[i].attachment << std::endl;
+		LOG_ALL(xlog) << "\tenabled    : " << info[i].enabled << std::endl;
+		LOG_ALL(xlog) << "\tnum_classes: " << info[i].num_classes << std::endl;
 
 		if (strcasestr(info[i].name, "touch")) {
 
@@ -863,16 +872,26 @@ XWindow::getInputType(int deviceid) {
 			XIFreeDeviceInfo(info);
 
 			return Pen;
+
+		// we are only interested in the core pointer, not all the physical mice
+		} else if (strcasestr(info[i].name, "virtual core pointer")) {
+
+			LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Mouse" << std::endl;
+
+			// default
+			_inputTypes[deviceid] = Mouse;
+
+			XIFreeDeviceInfo(info);
+
+			return Mouse;
 		}
 	}
 
-	LOG_DEBUG(xlog) << "found a new input device (" << deviceid << ") of type Mouse" << std::endl;
+	// if it is not one of the above input types, we don't care about it
+	_inputTypes[deviceid] = Ignored;
 
-	// default
-	_inputTypes[deviceid] = Mouse;
 	XIFreeDeviceInfo(info);
-
-	return Mouse;
+	return Ignored;
 }
 
 util::point<double>

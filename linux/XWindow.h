@@ -77,7 +77,8 @@ private:
 
 		Mouse,
 		Pen,
-		Touch
+		Touch,
+		Ignored /* for input devices we don't care about */
 	};
 
 	/**
