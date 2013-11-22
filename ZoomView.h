@@ -51,9 +51,9 @@ private:
 
 	void onKeyDown(KeyDown& signal);
 
-	void onMouseDown(const MouseDown& signal);
+	void onMouseDown(MouseDown& signal);
 
-	void onMouseMove(const MouseMove& signal);
+	void onMouseMove(MouseMove& signal);
 
 	// input/output
 	pipeline::Input<Painter>      _content;
