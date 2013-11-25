@@ -17,7 +17,7 @@ class SliderImpl : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SliderImpl(double min, double max, double value);
+	SliderImpl(Precision min, Precision max, Precision value);
 
 private:
 
@@ -39,10 +39,10 @@ private:
 	pipeline::Output<SliderPainter> _painter;
 
 	// the minimal value
-	double _min;
+	Precision _min;
 
 	// the maximal value
-	double _max;
+	Precision _max;
 
 	// indicates that the mouse is currently over the slider
 	bool _mouseOver;
@@ -61,8 +61,8 @@ private:
 };
 
 template <typename Precision>
-SliderImpl<Precision>::SliderImpl(double min, double max, double value) :
-	_value(boost::make_shared<double>(value)),
+SliderImpl<Precision>::SliderImpl(Precision min, Precision max, Precision value) :
+	_value(boost::make_shared<Precision>(value)),
 	_painter(new SliderPainter(min, max, min)),
 	_min(min),
 	_max(max),
@@ -168,9 +168,9 @@ SliderImpl<Precision>::onMouseMove(MouseMove& signal) {
 
 			double pos = signal.position.x - _draggingOffset;
 
-			double value = _min + ((pos - graspSize.width()/2)/(size.width() - graspSize.width()))*(_max - _min);
+			double value = (double)_min + ((pos - graspSize.width()/2)/(size.width() - graspSize.width()))*(_max - _min);
 
-			value = std::min(_max, std::max(_min, value));
+			value = std::min((double)_max, std::max((double)_min, value));
 
 			*_value = value;
 
