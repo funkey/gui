@@ -165,8 +165,8 @@ TextPainter::setTextColor(double r, double g, double b, double a) {
 
 void
 TextPainter::computeSize(
-		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::rect<double>&  /*roi*/,
+		const util::point<double>& /*resolution*/) {
 
 #ifdef HAVE_CAIRO
 
@@ -236,7 +236,6 @@ TextPainter::redrawText(const util::rect<double>& roi, const util::point<double>
 	// size. [cu]
 
 	util::rect<double>  cairoSize        = _glSize*resolution;
-	util::point<double> cairoPadding     = _glPadding*resolution;
 	util::point<double> glToCairoScale   = resolution;
 	util::point<double> textToGlScale(1.0, 1.0);
 	util::point<double> textToCairoScale = textToGlScale*glToCairoScale;
