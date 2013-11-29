@@ -37,6 +37,7 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 	_display = XOpenDisplay(0);
 	_screen  = DefaultScreen(_display);
+	_xfd     = ConnectionNumber(_display);
 
 	_screenResolution.x = DisplayWidth(_display, _screen);
 	_screenResolution.y = DisplayHeight(_display, _screen);
@@ -163,6 +164,10 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 
 	// setup fullscreen
 	setFullscreen(mode.fullscreen);
+
+	// create interrupt pipe
+	if (pipe(_interruptFds) < 0)
+		LOG_ERROR(xlog) << "could not create interrupt pipe" << std::endl;
 }
 
 XWindow::~XWindow() {
@@ -197,6 +202,10 @@ XWindow::~XWindow() {
 	XCloseDisplay(_display);
 	_display = 0;
 
+	// close interrupt pipe
+	::close(_interruptFds[0]);
+	::close(_interruptFds[1]);
+
 	LOG_ALL(xlog) << "[XWindow] [" << getCaption() << "] destructed" << std::endl;
 }
 
@@ -226,286 +235,19 @@ XWindow::setFullscreen(bool fullscreen) {
 void
 XWindow::processEvents() {
 
-	if (closed())
-		return;
-
-	bool busy = false;
-
-	boost::timer::cpu_timer timer;
-
-	const boost::timer::nanosecond_type NanosBusyWait = 1000000LL;  // 1/1000th of a second
-	const boost::timer::nanosecond_type NanosIdleWait = 10000000LL; // 1/100th of a second
+	XEvent event;
+	int numEvents;
 
 	while (!closed()) {
 
-		XEvent event;
+		if (waitForEvents()) {
 
-		int numEvents = XPending(_display);
+			while (numEvents = XPending(_display)) {
 
-		busy = (numEvents > 0);
+				for (int i = 0; i < numEvents; i++) {
 
-		for (int i = 0; i < numEvents; i++) {
-
-			Modifiers       modifiers;
-			keys::Key       key;
-			buttons::Button button;
-
-			XNextEvent(_display, &event);
-
-			if (event.xcookie.type == GenericEvent &&
-				event.xcookie.extension == _xinputOpcode &&
-				XGetEventData(_display, &event.xcookie)) {
-
-				if (event.xcookie.evtype == XI_PropertyEvent) {
-
-					processPropertyEvent((XIPropertyEvent*)event.xcookie.data);
-					continue;
-				}
-
-				XIDeviceEvent* deviceEvent = (XIDeviceEvent*)event.xcookie.data;
-				double* val = deviceEvent->valuators.values;
-
-				InputType inputType = getInputType(deviceEvent->deviceid);
-
-				//LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
-				//LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
-				//LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
-				//LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
-				//LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
-
-				for (int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
-					if (XIMaskIsSet(deviceEvent->valuators.mask, i))
-						LOG_ALL(xlog) << "[XWindow] \t" << i << ": " << *val++ << std::endl;
-
-				switch (event.xcookie.evtype) {
-
-					case XI_TouchBegin:
-
-						if (inputType == Touch) {
-
-							LOG_ALL(xlog) << "[XWindow] finger down" << std::endl;
-
-							processFingerDownEvent(
-										deviceEvent->time,
-										button,
-										point<double>(deviceEvent->event_x, deviceEvent->event_y),
-										deviceEvent->detail,
-										modifiers);
-						}
-
-						break;
-
-					case XI_TouchUpdate:
-
-						if (inputType == Touch) {
-
-							LOG_ALL(xlog) << "[XWindow] finger moved" << std::endl;
-
-							processFingerMoveEvent(
-										deviceEvent->time,
-										point<double>(deviceEvent->event_x, deviceEvent->event_y),
-										deviceEvent->detail,
-										modifiers);
-						}
-
-						break;
-
-					case XI_TouchEnd:
-
-						if (inputType == Touch) {
-
-							LOG_ALL(xlog) << "[XWindow] finger up" << std::endl;
-
-							processFingerUpEvent(
-										deviceEvent->time,
-										button,
-										point<double>(deviceEvent->event_x, deviceEvent->event_y),
-										deviceEvent->detail,
-										modifiers);
-						}
-
-						break;
-
-					case XI_ButtonPress:
-
-						button    = buttonToButton(deviceEvent->detail);
-						modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
-
-						if (inputType == Mouse) {
-
-							LOG_ALL(xlog) << "[XWindow] window "
-										  << " received a mouse down event at "
-										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
-
-							processButtonDownEvent(
-									deviceEvent->time,
-									button,
-									point<double>(deviceEvent->event_x, deviceEvent->event_y),
-									modifiers);
-
-						} else if (inputType == Pen) {
-
-							processPenDownEvent(
-									deviceEvent->time,
-									button,
-									getPenPosition(deviceEvent),
-									getPressure(deviceEvent),
-									modifiers);
-						}
-
-						break;
-
-					case XI_ButtonRelease:
-
-						button    = buttonToButton(deviceEvent->detail);
-						modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
-
-						if (inputType == Mouse) {
-
-							LOG_ALL(xlog) << "[XWindow] window "
-										  << " received a mouse up event at "
-										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
-
-							processButtonUpEvent(
-									deviceEvent->time,
-									button,
-									point<double>(deviceEvent->event_x, deviceEvent->event_y),
-									modifiers);
-
-						} else if (inputType == Pen) {
-
-							processPenUpEvent(
-									deviceEvent->time,
-									button,
-									getPenPosition(deviceEvent),
-									getPressure(deviceEvent),
-									modifiers);
-						}
-
-						break;
-
-					case XI_Motion:
-
-						modifiers = static_cast<Modifiers>(stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked) | buttonsToModifiers(deviceEvent->buttons));
-
-						if (inputType == Mouse) {
-
-							LOG_ALL(xlog) << "[XWindow] window "
-										  << " received a mouse motion event at "
-										  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
-
-							processMouseMoveEvent(
-									deviceEvent->time,
-									point<double>(deviceEvent->event_x, deviceEvent->event_y),
-									modifiers);
-
-						} else if (inputType == Pen) {
-
-							processPenMoveEvent(
-									deviceEvent->time,
-									getPenPosition(deviceEvent),
-									getPressure(deviceEvent),
-									modifiers);
-						}
-
-						break;
-
-					default:
-
-						LOG_ALL(xlog) << "[XWindow] received unknown xinput2 event" << std::endl;
-						break;
-				}
-
-			} else {
-
-				switch (event.type) {
-
-					case ConfigureNotify:
-						// resize
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received a configure notification" << endl;
-						processResizeEvent(event.xconfigure.width, event.xconfigure.height);
-						foreach (int deviceId, _penDevices)
-							configureTabletArea(deviceId);
-						setDirty();
-						break;
-
-					case Expose:
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received an expose notification" << endl;
-						setDirty();
-						break;
-
-					case ClientMessage:
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received a client message" << endl;
-						if ((Atom)event.xclient.data.l[0] == _deleteWindow) {
-
-							processCloseEvent();
-
-							// there is no need to process further events
-							return;
-						}
-
-						break;
-
-					case DestroyNotify:
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received a destroy notification" << endl;
-
-						processCloseEvent();
-
-						// there is no need to process further events
-						return;
-
-					case KeyPress:
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received a key press notification" << endl;
-
-						key       = keycodeToKey(event.xkey.keycode);
-						modifiers = stateToModifiers(event.xkey.state);
-
-						processKeyDownEvent(key, modifiers);
-
-						break;
-
-					case KeyRelease:
-						LOG_ALL(xlog) << "[XWindow] window "
-									  << " received a key release notification" << endl;
-
-						key       = keycodeToKey(event.xkey.keycode);
-						modifiers = stateToModifiers(event.xkey.state);
-
-						if (key == gui::keys::F)
-							setFullscreen(!_fullscreen);
-						else
-							processKeyUpEvent(key, modifiers);
-
-						break;
-
-					case EnterNotify:
-						break;
-
-					case LeaveNotify:
-						break;
-
-					case FocusIn:
-						break;
-
-					case FocusOut:
-						break;
-
-					case UnmapNotify:
-						break;
-
-					case MapNotify:
-						break;
-
-					default:
-						LOG_ERROR(xlog) << "[XWindow] window "
-										<< " received unknown event notification: "
-										<< event.type << endl;
-						break;
+					XNextEvent(_display, &event);
+					processEvent(event);
 				}
 			}
 		}
@@ -514,21 +256,307 @@ XWindow::processEvents() {
 		if (isDirty() && !closed()) {
 
 			setDirty(false);
-
 			redraw();
+		}
+	}
+}
 
-			busy = true;
+bool
+XWindow::waitForEvents() {
+
+	fd_set readfds;
+	FD_ZERO(&readfds);
+	FD_SET(_xfd, &readfds);
+	FD_SET(_interruptFds[0], &readfds);
+
+	// wait (and block) until either there is an event from X11 or we got 
+	// interrupted by another thread
+	select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
+
+	if (FD_ISSET(_interruptFds[0], &readfds)) {
+
+		char c = 0;
+		if (!read(_interruptFds[0], &c, 1))
+			LOG_ERROR(xlog) << "could not read from interrupt pipe!" << std::endl;
+
+		// we got interrupted
+		return false;
+	}
+
+	return true;
+}
+
+void
+XWindow::interrupt() {
+
+	// interrupt select
+	char c = 0;
+	if (!write(_interruptFds[1], &c, 1))
+		LOG_ERROR(xlog) << "couldn't write to interrupt pipe" << std::endl;
+}
+
+void
+XWindow::processEvent(XEvent& event) {
+
+	Modifiers       modifiers;
+	keys::Key       key;
+	buttons::Button button;
+
+	if (event.xcookie.type == GenericEvent &&
+		event.xcookie.extension == _xinputOpcode &&
+		XGetEventData(_display, &event.xcookie)) {
+
+		if (event.xcookie.evtype == XI_PropertyEvent) {
+
+			processPropertyEvent((XIPropertyEvent*)event.xcookie.data);
+			return;
 		}
 
-		boost::timer::cpu_times const elapsed(timer.elapsed());
+		XIDeviceEvent* deviceEvent = (XIDeviceEvent*)event.xcookie.data;
+		double* val = deviceEvent->valuators.values;
 
-		boost::timer::nanosecond_type waitAtLeast = (busy ? NanosBusyWait : NanosIdleWait);
+		InputType inputType = getInputType(deviceEvent->deviceid);
 
-		if (elapsed.wall <= waitAtLeast)
-			usleep((waitAtLeast - elapsed.wall)/1000);
+		//LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
+		//LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
+		//LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
+		//LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
+		//LOG_ALL(xlog) << "[XWindow] \tdetail: " << deviceEvent->detail << std::endl;
 
-		timer.stop();
-		timer.start();
+		for (int i = 0; i < deviceEvent->valuators.mask_len * 8; i++)
+			if (XIMaskIsSet(deviceEvent->valuators.mask, i))
+				LOG_ALL(xlog) << "[XWindow] \t" << i << ": " << *val++ << std::endl;
+
+		switch (event.xcookie.evtype) {
+
+			case XI_TouchBegin:
+
+				if (inputType == Touch) {
+
+					LOG_ALL(xlog) << "[XWindow] finger down" << std::endl;
+
+					processFingerDownEvent(
+								deviceEvent->time,
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
+				}
+
+				break;
+
+			case XI_TouchUpdate:
+
+				if (inputType == Touch) {
+
+					LOG_ALL(xlog) << "[XWindow] finger moved" << std::endl;
+
+					processFingerMoveEvent(
+								deviceEvent->time,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
+				}
+
+				break;
+
+			case XI_TouchEnd:
+
+				if (inputType == Touch) {
+
+					LOG_ALL(xlog) << "[XWindow] finger up" << std::endl;
+
+					processFingerUpEvent(
+								deviceEvent->time,
+								button,
+								point<double>(deviceEvent->event_x, deviceEvent->event_y),
+								deviceEvent->detail,
+								modifiers);
+				}
+
+				break;
+
+			case XI_ButtonPress:
+
+				button    = buttonToButton(deviceEvent->detail);
+				modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+
+				if (inputType == Mouse) {
+
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a mouse down event at "
+								  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
+
+					processButtonDownEvent(
+							deviceEvent->time,
+							button,
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+				} else if (inputType == Pen) {
+
+					processPenDownEvent(
+							deviceEvent->time,
+							button,
+							getPenPosition(deviceEvent),
+							getPressure(deviceEvent),
+							modifiers);
+				}
+
+				break;
+
+			case XI_ButtonRelease:
+
+				button    = buttonToButton(deviceEvent->detail);
+				modifiers = stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked);
+
+				if (inputType == Mouse) {
+
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a mouse up event at "
+								  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
+
+					processButtonUpEvent(
+							deviceEvent->time,
+							button,
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+				} else if (inputType == Pen) {
+
+					processPenUpEvent(
+							deviceEvent->time,
+							button,
+							getPenPosition(deviceEvent),
+							getPressure(deviceEvent),
+							modifiers);
+				}
+
+				break;
+
+			case XI_Motion:
+
+				modifiers = static_cast<Modifiers>(stateToModifiers(deviceEvent->mods.base | deviceEvent->mods.locked) | buttonsToModifiers(deviceEvent->buttons));
+
+				if (inputType == Mouse) {
+
+					LOG_ALL(xlog) << "[XWindow] window "
+								  << " received a mouse motion event at "
+								  << deviceEvent->event_x << ", " << deviceEvent->event_y << endl;
+
+					processMouseMoveEvent(
+							deviceEvent->time,
+							point<double>(deviceEvent->event_x, deviceEvent->event_y),
+							modifiers);
+
+				} else if (inputType == Pen) {
+
+					processPenMoveEvent(
+							deviceEvent->time,
+							getPenPosition(deviceEvent),
+							getPressure(deviceEvent),
+							modifiers);
+				}
+
+				break;
+
+			default:
+
+				LOG_ALL(xlog) << "[XWindow] received unknown xinput2 event" << std::endl;
+				break;
+		}
+
+	} else {
+
+		switch (event.type) {
+
+			case ConfigureNotify:
+				// resize
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received a configure notification" << endl;
+				processResizeEvent(event.xconfigure.width, event.xconfigure.height);
+				foreach (int deviceId, _penDevices)
+					configureTabletArea(deviceId);
+				setDirty();
+				break;
+
+			case Expose:
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received an expose notification" << endl;
+				setDirty();
+				break;
+
+			case ClientMessage:
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received a client message" << endl;
+				if ((Atom)event.xclient.data.l[0] == _deleteWindow) {
+
+					processCloseEvent();
+
+					// there is no need to process further events
+					return;
+				}
+
+				break;
+
+			case DestroyNotify:
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received a destroy notification" << endl;
+
+				processCloseEvent();
+
+				// there is no need to process further events
+				return;
+
+			case KeyPress:
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received a key press notification" << endl;
+
+				key       = keycodeToKey(event.xkey.keycode);
+				modifiers = stateToModifiers(event.xkey.state);
+
+				processKeyDownEvent(key, modifiers);
+
+				break;
+
+			case KeyRelease:
+				LOG_ALL(xlog) << "[XWindow] window "
+							  << " received a key release notification" << endl;
+
+				key       = keycodeToKey(event.xkey.keycode);
+				modifiers = stateToModifiers(event.xkey.state);
+
+				if (key == gui::keys::F)
+					setFullscreen(!_fullscreen);
+				else
+					processKeyUpEvent(key, modifiers);
+
+				break;
+
+			case EnterNotify:
+				break;
+
+			case LeaveNotify:
+				break;
+
+			case FocusIn:
+				break;
+
+			case FocusOut:
+				break;
+
+			case UnmapNotify:
+				break;
+
+			case MapNotify:
+				break;
+
+			default:
+				LOG_ERROR(xlog) << "[XWindow] window "
+								<< " received unknown event notification: "
+								<< event.type << endl;
+				break;
+		}
 	}
 }
 

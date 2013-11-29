@@ -54,16 +54,20 @@ public:
 	virtual const util::point<double>& getResolution() = 0;
 
 	/**
-	 * Process all accumulated events since the last call to this function.
-	 * This method should be called repeatedly to ensure proper redrawing and
-	 * user interaction. Any implementation has to make sure that the
-	 * appropriate process...Event() methods are called.
-	 *
-	 * Shall return true, if there were events to process, false otherwise.
+	 * Process window manager events and redraw. If this call blocks for events, 
+	 * make sure to implement interrupt(), which will be called whenever a 
+	 * redraw is required.
 	 *
 	 * Platform dependent.
 	 */
 	virtual void processEvents() = 0;
+
+	/**
+	 * Interrupt the event thread. This method will be called whenever a redraw 
+	 * is required. Implementations should guarantee that the event loop gets 
+	 * interrupted and initiates the redraw.
+	 */
+	virtual void interrupt() {};
 
 	/**
 	 * Callback for input events.
@@ -237,13 +241,16 @@ protected:
 	virtual void redraw() = 0;
 
 	/**
-	 * Flag this window as being dirty. redraw() will be called on the next
-	 * occasion. Subclasses should use this method to initiate redrawing and not
-	 * call redraw() themselves.
+	 * Mark this window as being dirty. redraw() will be called on the next
+	 * occasion from the event loop in processEvents(). Subclasses should use 
+	 * this method to initiate redrawing instead of calling redraw() themselves.
 	 */
 	void setDirty(bool dirty = true) {
 	
 		_dirty = dirty;
+
+		// interrupt the possibly blocking event loop in processEvents()
+		interrupt();
 	}
 
 	/**

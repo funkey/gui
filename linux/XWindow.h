@@ -92,6 +92,22 @@ private:
 	};
 
 	/**
+	 * Process a general X event.
+	 */
+	void processEvent(XEvent& event);
+
+	/**
+	 * Wait for X events. Returns true if there are events, false if the wait 
+	 * got interrupted.
+	 */
+	bool waitForEvents();
+
+	/**
+	 * Interrupt the call to waitForEvents().
+	 */
+	void interrupt();
+
+	/**
 	 * Process a xinput2 property change event.
 	 */
 	void processPropertyEvent(XIPropertyEvent* propertyEvent);
@@ -142,6 +158,9 @@ private:
 	// the X11 screen
 	int      _screen;
 
+	// file descriptor to X11 events
+	int      _xfd;
+
 	// the X11 window
 	::Window _window;
 
@@ -159,6 +178,9 @@ private:
 
 	// was closed
 	bool     _closed;
+
+	// pipe file descriptors to interrupt the event thread
+	int  _interruptFds[2];
 
 	// is this window running in fullscreen?
 	bool     _fullscreen;
