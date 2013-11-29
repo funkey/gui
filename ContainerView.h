@@ -63,6 +63,12 @@ private:
 
 	bool filter(PointerSignal& signal, unsigned int i) {
 
+		// It can happen that we receive events to filter before we updated our 
+		// outputs and therefore don't know the offsets, yet. In this cases, 
+		// ignore the event.
+		if (i >= _offsets.size())
+			return false;
+
 		signal.position -= _offsets[i];
 
 		return true;
