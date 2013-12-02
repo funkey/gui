@@ -242,7 +242,7 @@ XWindow::processEvents() {
 
 		if (waitForEvents()) {
 
-			while (numEvents = XPending(_display)) {
+			while ((numEvents = XPending(_display)) != 0) {
 
 				for (int i = 0; i < numEvents; i++) {
 
