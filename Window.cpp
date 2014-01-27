@@ -321,18 +321,19 @@ Window::redraw() {
 	if (_painter) {
 
 		// make sure the painter is up-to-date
+		LOG_ALL(winlog) << "[" << getCaption() << "] updating inputs" << endl;
 		updateInputs();
-
-		// if we are still dirty after the update of the inputs we can safely 
-		// skip the redraw
-		if (isDirty())
-			return;
+		LOG_ALL(winlog) << "[" << getCaption() << "] inputs up-to-date" << endl;
 
 		// draw the updated painter
+		LOG_ALL(winlog) << "[" << getCaption() << "] drawing painter content" << endl;
 		bool wantsRedraw = _painter->draw(_region, point<double>(1.0, 1.0));
 
-		if (wantsRedraw)
+		if (wantsRedraw) {
+
+			LOG_ALL(winlog) << "[" << getCaption() << "] painter indicated redraw request -- set myself dirty again" << endl;
 			setDirty();
+		}
 
 	} else {
 
@@ -344,6 +345,8 @@ Window::redraw() {
 	flush();
 
 	GL_ASSERT;
+
+	LOG_ALL(winlog) << "[" << getCaption() << "] finished redrawing" << endl;
 }
 
 void
