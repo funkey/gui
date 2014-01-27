@@ -269,6 +269,10 @@ XWindow::waitForEvents() {
 	FD_SET(_xfd, &readfds);
 	FD_SET(_interruptFds[0], &readfds);
 
+	// no need to wait if there are still unprocessed events
+	if (XPending(_display))
+		return true;
+
 	// wait (and block) until either there is an event from X11 or we got 
 	// interrupted by another thread
 	select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
