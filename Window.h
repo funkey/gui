@@ -125,8 +125,10 @@ private:
 
 	/**
 	 * Callback for top-down resize events.
+	 *
+	 * @return True, if the size of the window changed and a redraw is in order.
 	 */
-	void processResizeEvent(int width, int height);
+	bool processResizeEvent(int width, int height);
 
 	/**
 	 * Callback for close events.

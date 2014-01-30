@@ -230,8 +230,10 @@ protected:
 	 * React on resize events.
 	 *
 	 * Subclass implementation dependent.
+	 *
+	 * @return True, if the size of the window changed and a redraw is in order.
 	 */
-	virtual void processResizeEvent(int width, int height) = 0;
+	virtual bool processResizeEvent(int width, int height) = 0;
 
 	/**
 	 * Instruct the window to redraw itself.
@@ -244,13 +246,22 @@ protected:
 	 * Mark this window as being dirty. redraw() will be called on the next
 	 * occasion from the event loop in processEvents(). Subclasses should use 
 	 * this method to initiate redrawing instead of calling redraw() themselves.
+	 *
+	 * @param dirty
+	 *             Set or unset the dirty flag.
+	 *
+	 * @param needInterrupt
+	 *             Indicate that the event wait needs to be interrupted. Unless 
+	 *             you call this from within the event processing code, you want 
+	 *             that.
 	 */
-	void setDirty(bool dirty = true) {
+	void setDirty(bool dirty = true, bool needInterrupt = true) {
 	
 		_dirty = dirty;
 
 		// interrupt the possibly blocking event loop in processEvents()
-		interrupt();
+		if (dirty && needInterrupt)
+			interrupt();
 	}
 
 	/**

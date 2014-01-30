@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <fcntl.h>
 
 #include <boost/timer/timer.hpp>
 
@@ -13,7 +14,7 @@ using std::endl;
 using std::abs;
 using namespace logger;
 
-LogChannel xlog("xlog");
+LogChannel xlog("xlog", "[XWindow] ");
 
 namespace gui {
 
@@ -166,8 +167,16 @@ XWindow::XWindow(string caption, const WindowMode& mode) :
 	setFullscreen(mode.fullscreen);
 
 	// create interrupt pipe
-	if (pipe(_interruptFds) < 0)
+	if (pipe(_interruptFds) < 0) {
+
 		LOG_ERROR(xlog) << "could not create interrupt pipe" << std::endl;
+
+	} else {
+
+		// set interrupt pipe to non-blocking
+		fcntl(_interruptFds[0], F_SETFL, fcntl(_interruptFds[0], F_GETFL) | O_NONBLOCK);
+		fcntl(_interruptFds[1], F_SETFL, fcntl(_interruptFds[1], F_GETFL) | O_NONBLOCK);
+	}
 }
 
 XWindow::~XWindow() {
@@ -273,19 +282,35 @@ XWindow::waitForEvents() {
 	if (XPending(_display))
 		return true;
 
+	LOG_DEBUG(xlog) << "blocking until events are available" << std::endl;
+
 	// wait (and block) until either there is an event from X11 or we got 
 	// interrupted by another thread
 	select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
 
 	if (FD_ISSET(_interruptFds[0], &readfds)) {
 
-		char c = 0;
-		if (!read(_interruptFds[0], &c, 1))
-			LOG_ERROR(xlog) << "could not read from interrupt pipe!" << std::endl;
+		LOG_DEBUG(xlog) << "interrupted by interrupt pipe" << std::endl;
+
+		char c[256];
+
+		// read as many characters from the interrupt pipe as possible
+		size_t n = 0;
+		ssize_t r;
+		while ((r = read(_interruptFds[0], &c, 256)) > 0) { n += r; }
+
+		int e = errno;
+		if (r == -1 && e == EAGAIN)
+			LOG_ALL(xlog) << "read from pipe until no more content was available" << std::endl;
+
+		LOG_ALL(xlog) << "read " << n << " bytes from interrupt pipe" << std::endl;
 
 		// we got interrupted
 		return false;
 	}
+
+	if (FD_ISSET(_xfd, &readfds))
+		LOG_DEBUG(xlog) << "interrupted by X11 event" << std::endl;
 
 	return true;
 }
@@ -293,10 +318,24 @@ XWindow::waitForEvents() {
 void
 XWindow::interrupt() {
 
+	LOG_DEBUG(xlog) << "writing to interrupt pipe" << std::endl;
+
 	// interrupt select
 	char c = 0;
-	if (!write(_interruptFds[1], &c, 1))
-		LOG_ERROR(xlog) << "couldn't write to interrupt pipe" << std::endl;
+	ssize_t r;
+	if ((r = write(_interruptFds[1], &c, 1)) == 1) {
+
+		LOG_DEBUG(xlog) << "wrote one byte to interrupt pipe" << std::endl;
+
+	} else {
+
+		int e = errno;
+
+		if (r == -1 && e == EAGAIN)
+			LOG_ERROR(xlog) << "could not write to interrupt pipe, buffer filled up" << std::endl;
+		else
+			LOG_ERROR(xlog) << "could not write to interrupt pipe, errno == " << e << std::endl;
+	}
 }
 
 void
@@ -322,6 +361,7 @@ XWindow::processEvent(XEvent& event) {
 		InputType inputType = getInputType(deviceEvent->deviceid);
 
 		//LOG_ALL(xlog) << "[XWindow] event dump:" << std::endl;
+		//G
 		//LOG_ALL(xlog) << "[XWindow] \tdevice " << deviceEvent->deviceid << " (" << getInputType(deviceEvent->deviceid) << ") , source " << deviceEvent->sourceid  << std::endl;
 		//LOG_ALL(xlog) << "[XWindow] \tevent coordinates: " << deviceEvent->event_x << ", " << deviceEvent->event_y << std::endl;
 		//LOG_ALL(xlog) << "[XWindow] \troot  coordinates: " << deviceEvent->root_x  << ", " << deviceEvent->root_y << std::endl;
@@ -478,16 +518,17 @@ XWindow::processEvent(XEvent& event) {
 				// resize
 				LOG_ALL(xlog) << "[XWindow] window "
 							  << " received a configure notification" << endl;
-				processResizeEvent(event.xconfigure.width, event.xconfigure.height);
-				foreach (int deviceId, _penDevices)
-					configureTabletArea(deviceId);
-				setDirty();
+				if (processResizeEvent(event.xconfigure.width, event.xconfigure.height)) {
+					foreach (int deviceId, _penDevices)
+						configureTabletArea(deviceId);
+					setDirty(true, false);
+				}
 				break;
 
 			case Expose:
 				LOG_ALL(xlog) << "[XWindow] window "
 							  << " received an expose notification" << endl;
-				setDirty();
+				setDirty(true, false);
 				break;
 
 			case ClientMessage:

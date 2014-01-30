@@ -120,8 +120,12 @@ Window::getResolution() {
 	return _resolution;
 }
 
-void
+bool
 Window::processResizeEvent(int width, int height) {
+
+	// did the size of the window change?
+	if (_region.maxX == width && _region.maxY == height && _resolution.x == width && _resolution.y == height)
+		return false;
 
 	_region.maxX = width;
 	_region.maxY = height;
@@ -138,6 +142,8 @@ Window::processResizeEvent(int width, int height) {
 
 	// prepare painters
 	_resize(_region);
+
+	return true;
 }
 
 void
