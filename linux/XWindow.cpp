@@ -331,10 +331,14 @@ XWindow::interrupt() {
 
 		int e = errno;
 
-		if (r == -1 && e == EAGAIN)
+		if (r == -1 && e == EAGAIN) {
+
 			LOG_ERROR(xlog) << "could not write to interrupt pipe, buffer filled up" << std::endl;
-		else
+
+		} else {
+
 			LOG_ERROR(xlog) << "could not write to interrupt pipe, errno == " << e << std::endl;
+		}
 	}
 }
 
