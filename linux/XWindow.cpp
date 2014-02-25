@@ -282,7 +282,7 @@ XWindow::waitForEvents() {
 	if (XPending(_display))
 		return true;
 
-	LOG_DEBUG(xlog) << "blocking until events are available" << std::endl;
+	LOG_ALL(xlog) << "blocking until events are available" << std::endl;
 
 	// wait (and block) until either there is an event from X11 or we got 
 	// interrupted by another thread
@@ -290,7 +290,7 @@ XWindow::waitForEvents() {
 
 	if (FD_ISSET(_interruptFds[0], &readfds)) {
 
-		LOG_DEBUG(xlog) << "interrupted by interrupt pipe" << std::endl;
+		LOG_ALL(xlog) << "interrupted by interrupt pipe" << std::endl;
 
 		char c[256];
 
@@ -310,7 +310,7 @@ XWindow::waitForEvents() {
 	}
 
 	if (FD_ISSET(_xfd, &readfds))
-		LOG_DEBUG(xlog) << "interrupted by X11 event" << std::endl;
+		LOG_ALL(xlog) << "interrupted by X11 event" << std::endl;
 
 	return true;
 }
@@ -318,14 +318,14 @@ XWindow::waitForEvents() {
 void
 XWindow::interrupt() {
 
-	LOG_DEBUG(xlog) << "writing to interrupt pipe" << std::endl;
+	LOG_ALL(xlog) << "writing to interrupt pipe" << std::endl;
 
 	// interrupt select
 	char c = 0;
 	ssize_t r;
 	if ((r = write(_interruptFds[1], &c, 1)) == 1) {
 
-		LOG_DEBUG(xlog) << "wrote one byte to interrupt pipe" << std::endl;
+		LOG_ALL(xlog) << "wrote one byte to interrupt pipe" << std::endl;
 
 	} else {
 
