@@ -93,7 +93,7 @@ ZoomView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
 	LOG_ALL(zoomviewlog) << "got a new painter" << std::endl;
 
 	if (!_zoomed)
-		_zoomed.createData();
+		_zoomed = new ZoomPainter();
 
 	_zoomed->setContent(_content);
 

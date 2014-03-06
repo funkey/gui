@@ -50,7 +50,7 @@ RotateView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
 	LOG_ALL(rotateviewlog) << "got a new painter" << std::endl;
 
 	if (!_rotated)
-		_rotated.createData();
+		_rotated = new RotatePainter();
 
 	_rotated->setContent(_content);
 

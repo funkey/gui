@@ -79,7 +79,7 @@ private:
 		LOG_ALL(containerviewlog) << getName() << ": got a new painter " << typeName(*signal.getData()) << std::endl;
 
 		if (!_container)
-			_container.createData();
+			_container = new gui::ContainerPainter();
 
 		_container->add(signal.getData());
 
