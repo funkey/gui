@@ -13,9 +13,9 @@ TextView::TextView(std::string text) :
 
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardCallback(&TextView::onUpdate, this);
-	_painter.registerForwardSlot(_modified);
-	_painter.registerForwardSlot(_sizeChanged);
+	_painter.registerCallback(&TextView::onUpdate, this);
+	_painter.registerSlot(_modified);
+	_painter.registerSlot(_sizeChanged);
 }
 
 void

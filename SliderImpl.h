@@ -72,9 +72,9 @@ SliderImpl<Precision>::SliderImpl(Precision min, Precision max, Precision value)
 	registerOutput(_value, "value");
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardCallback(&SliderImpl<Precision>::onMouseUp, this);
-	_painter.registerForwardCallback(&SliderImpl<Precision>::onMouseDown, this);
-	_painter.registerForwardCallback(&SliderImpl<Precision>::onMouseMove, this);
+	_painter.registerCallback(&SliderImpl<Precision>::onMouseUp, this);
+	_painter.registerCallback(&SliderImpl<Precision>::onMouseDown, this);
+	_painter.registerCallback(&SliderImpl<Precision>::onMouseMove, this);
 
 	_painter->setValue(*_value);
 }

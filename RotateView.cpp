@@ -22,26 +22,26 @@ RotateView::RotateView() :
 	registerInput(_content, "painter");
 	registerOutput(_rotated, "painter");
 
-	_content.registerBackwardSlot(_update);
-	_content.registerBackwardSlot(_keyDown);
-	_content.registerBackwardSlot(_keyUp);
-	_content.registerBackwardSlot(_mouseDown);
-	_content.registerBackwardSlot(_mouseUp);
-	_content.registerBackwardSlot(_mouseMove);
-	_content.registerBackwardCallback(&RotateView::onInputSet, this);
-	_content.registerBackwardCallback(&RotateView::onModified, this);
-	_content.registerBackwardCallback(&RotateView::onContentChanged, this);
-	_content.registerBackwardCallback(&RotateView::onSizeChanged, this);
+	_content.registerSlot(_update);
+	_content.registerSlot(_keyDown);
+	_content.registerSlot(_keyUp);
+	_content.registerSlot(_mouseDown);
+	_content.registerSlot(_mouseUp);
+	_content.registerSlot(_mouseMove);
+	_content.registerCallback(&RotateView::onInputSet, this);
+	_content.registerCallback(&RotateView::onModified, this);
+	_content.registerCallback(&RotateView::onContentChanged, this);
+	_content.registerCallback(&RotateView::onSizeChanged, this);
 
-	_rotated.registerForwardSlot(_modified);
-	_rotated.registerForwardSlot(_contentChanged);
-	_rotated.registerForwardSlot(_sizeChanged);
-	_rotated.registerForwardCallback(&RotateView::onUpdate, this);
-	_rotated.registerForwardCallback(&RotateView::onKeyUp, this);
-	_rotated.registerForwardCallback(&RotateView::onKeyDown, this);
-	_rotated.registerForwardCallback(&RotateView::onMouseUp, this);
-	_rotated.registerForwardCallback(&RotateView::onMouseDown, this);
-	_rotated.registerForwardCallback(&RotateView::onMouseMove, this);
+	_rotated.registerSlot(_modified);
+	_rotated.registerSlot(_contentChanged);
+	_rotated.registerSlot(_sizeChanged);
+	_rotated.registerCallback(&RotateView::onUpdate, this);
+	_rotated.registerCallback(&RotateView::onKeyUp, this);
+	_rotated.registerCallback(&RotateView::onKeyDown, this);
+	_rotated.registerCallback(&RotateView::onMouseUp, this);
+	_rotated.registerCallback(&RotateView::onMouseDown, this);
+	_rotated.registerCallback(&RotateView::onMouseMove, this);
 }
 
 void

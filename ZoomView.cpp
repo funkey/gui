@@ -14,18 +14,18 @@ ZoomView::ZoomView(bool autoscale) :
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");
 
-	_content.registerBackwardSlot(_keyDown);
-	_content.registerBackwardSlot(_keyUp);
-	_content.registerBackwardCallback(&ZoomView::onInputSet, this);
-	_content.registerBackwardCallback(&ZoomView::onContentChanged, this);
-	_content.registerBackwardCallback(&ZoomView::onSizeChanged, this);
+	_content.registerSlot(_keyDown);
+	_content.registerSlot(_keyUp);
+	_content.registerCallback(&ZoomView::onInputSet, this);
+	_content.registerCallback(&ZoomView::onContentChanged, this);
+	_content.registerCallback(&ZoomView::onSizeChanged, this);
 
-	_zoomed.registerForwardSlot(_contentChanged);
-	_zoomed.registerForwardSlot(_sizeChanged);
-	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
-	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
+	_zoomed.registerSlot(_contentChanged);
+	_zoomed.registerSlot(_sizeChanged);
+	_zoomed.registerCallback(&ZoomView::onKeyUp, this);
+	_zoomed.registerCallback(&ZoomView::onKeyDown, this);
+	_zoomed.registerCallback(&ZoomView::onMouseDown, this);
+	_zoomed.registerCallback(&ZoomView::onMouseMove, this);
 
 	// establish pointer signal filter
 	PointerSignalFilter::filterBackward(_zoomed, _content, this);
@@ -36,7 +36,7 @@ ZoomView::ZoomView(bool autoscale) :
 	if (_autoscale) {
 
 		_zoomed->setAutoscale();
-		_zoomed.registerForwardCallback(&ZoomView::onResize, this);
+		_zoomed.registerCallback(&ZoomView::onResize, this);
 	}
 }
 
@@ -49,18 +49,18 @@ ZoomView::ZoomView(const util::rect<double>& desiredSize) :
 	registerInput(_content, "painter");
 	registerOutput(_zoomed, "painter");
 
-	_content.registerBackwardSlot(_keyDown);
-	_content.registerBackwardSlot(_keyUp);
-	_content.registerBackwardCallback(&ZoomView::onInputSet, this);
-	_content.registerBackwardCallback(&ZoomView::onContentChanged, this);
-	_content.registerBackwardCallback(&ZoomView::onSizeChanged, this);
+	_content.registerSlot(_keyDown);
+	_content.registerSlot(_keyUp);
+	_content.registerCallback(&ZoomView::onInputSet, this);
+	_content.registerCallback(&ZoomView::onContentChanged, this);
+	_content.registerCallback(&ZoomView::onSizeChanged, this);
 
-	_zoomed.registerForwardSlot(_contentChanged);
-	_zoomed.registerForwardSlot(_sizeChanged);
-	_zoomed.registerForwardCallback(&ZoomView::onKeyUp, this);
-	_zoomed.registerForwardCallback(&ZoomView::onKeyDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onMouseDown, this);
-	_zoomed.registerForwardCallback(&ZoomView::onMouseMove, this);
+	_zoomed.registerSlot(_contentChanged);
+	_zoomed.registerSlot(_sizeChanged);
+	_zoomed.registerCallback(&ZoomView::onKeyUp, this);
+	_zoomed.registerCallback(&ZoomView::onKeyDown, this);
+	_zoomed.registerCallback(&ZoomView::onMouseDown, this);
+	_zoomed.registerCallback(&ZoomView::onMouseMove, this);
 
 	// establish pointer signal filter
 	PointerSignalFilter::filterBackward(_zoomed, _content, this);

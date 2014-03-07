@@ -14,7 +14,7 @@ NamedView::NamedView(const std::string& name) :
 	registerInput(_content, "painter");
 	registerOutput(_container->getOutput(), "painter");
 
-	_content.registerBackwardCallback(&NamedView::onInputSet, this);
+	_content.registerCallback(&NamedView::onInputSet, this);
 }
 
 void

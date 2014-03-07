@@ -38,27 +38,27 @@ Window::Window(
 	registerInput(_painter, "painter");
 
 	// register backward signals
-	_painter.registerBackwardSlot(_resize);
-	_painter.registerBackwardSlot(_keyDown);
-	_painter.registerBackwardSlot(_keyUp);
-	_painter.registerBackwardSlot(_fingerMove);
-	_painter.registerBackwardSlot(_fingerDown);
-	_painter.registerBackwardSlot(_fingerUp);
-	_painter.registerBackwardSlot(_penMove);
-	_painter.registerBackwardSlot(_penDown);
-	_painter.registerBackwardSlot(_penUp);
-	_painter.registerBackwardSlot(_penIn);
-	_painter.registerBackwardSlot(_penOut);
-	_painter.registerBackwardSlot(_mouseMove);
-	_painter.registerBackwardSlot(_mouseDown);
-	_painter.registerBackwardSlot(_mouseUp);
+	_painter.registerSlot(_resize);
+	_painter.registerSlot(_keyDown);
+	_painter.registerSlot(_keyUp);
+	_painter.registerSlot(_fingerMove);
+	_painter.registerSlot(_fingerDown);
+	_painter.registerSlot(_fingerUp);
+	_painter.registerSlot(_penMove);
+	_painter.registerSlot(_penDown);
+	_painter.registerSlot(_penUp);
+	_painter.registerSlot(_penIn);
+	_painter.registerSlot(_penOut);
+	_painter.registerSlot(_mouseMove);
+	_painter.registerSlot(_mouseDown);
+	_painter.registerSlot(_mouseUp);
 
 	// register backward callbacks
-	_painter.registerBackwardCallback(&Window::onInputAdded, this);
-	_painter.registerBackwardCallback(&Window::onModified, this);
-	_painter.registerBackwardCallback(&Window::onSizeChanged, this);
-	_painter.registerBackwardCallback(&Window::onContentChanged, this);
-	_painter.registerBackwardCallback(&Window::onFullscreen, this);
+	_painter.registerCallback(&Window::onInputAdded, this);
+	_painter.registerCallback(&Window::onModified, this);
+	_painter.registerCallback(&Window::onSizeChanged, this);
+	_painter.registerCallback(&Window::onContentChanged, this);
+	_painter.registerCallback(&Window::onFullscreen, this);
 
 	// initiate first redraw
 	setDirty();

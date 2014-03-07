@@ -39,7 +39,7 @@ NumberView<Precision>::NumberView(int precision) :
 	registerInput(_value, "value");
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardSlot(_sizeChanged);
+	_painter.registerSlot(_sizeChanged);
 }
 
 template <typename Precision>

@@ -37,20 +37,20 @@ public:
 		// establish window signal filter
 		WindowSignalFilter::filterForward(_painters, _container, this);
 
-		_painters.registerBackwardCallback(&ContainerView::onPainterAdded, this);
-		_painters.registerBackwardCallback(&ContainerView::onPainterRemoved, this);
-		_painters.registerBackwardCallback(&ContainerView::onPaintersCleared, this);
-		_painters.registerBackwardCallback(&ContainerView::onContentChanged, this);
-		_painters.registerBackwardCallback(&ContainerView::onSizeChanged, this);
+		_painters.registerCallback(&ContainerView::onPainterAdded, this);
+		_painters.registerCallback(&ContainerView::onPainterRemoved, this);
+		_painters.registerCallback(&ContainerView::onPaintersCleared, this);
+		_painters.registerCallback(&ContainerView::onContentChanged, this);
+		_painters.registerCallback(&ContainerView::onSizeChanged, this);
 
-		_painters.registerBackwardSlot(_keyDown);
-		_painters.registerBackwardSlot(_keyUp);
+		_painters.registerSlot(_keyDown);
+		_painters.registerSlot(_keyUp);
 
-		_container.registerForwardCallback(&ContainerView::onKeyDown, this);
-		_container.registerForwardCallback(&ContainerView::onKeyUp, this);
+		_container.registerCallback(&ContainerView::onKeyDown, this);
+		_container.registerCallback(&ContainerView::onKeyUp, this);
 
-		_container.registerForwardSlot(_contentChanged);
-		_container.registerForwardSlot(_sizeChanged);
+		_container.registerSlot(_contentChanged);
+		_container.registerSlot(_sizeChanged);
 	}
 
 private:

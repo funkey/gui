@@ -15,8 +15,8 @@ SwitchImpl::SwitchImpl(bool value) :
 	registerOutput(_value, "value");
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardCallback(&SwitchImpl::onMouseUp, this);
-	_painter.registerForwardCallback(&SwitchImpl::onMouseMove, this);
+	_painter.registerCallback(&SwitchImpl::onMouseUp, this);
+	_painter.registerCallback(&SwitchImpl::onMouseMove, this);
 }
 
 void
