@@ -11,13 +11,15 @@
 
 namespace gui {
 
-class NamedView : public pipeline::ProcessNode {
+class NamedView : public pipeline::SimpleProcessNode<> {
 
 public:
 
 	NamedView(const std::string& name);
 
 private:
+
+	void updateOutputs();
 
 	void onInputSet(const pipeline::InputSetBase& signal);
 
