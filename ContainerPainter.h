@@ -24,10 +24,19 @@ namespace gui {
  */
 class ContainerPainter : public Painter {
 
-	typedef std::pair<boost::shared_ptr<Painter>, util::point<double> > painter_offset;
-	typedef std::vector<painter_offset>                                 painter_offsets;
+	typedef std::pair<boost::shared_ptr<Painter>, util::point<double> > content_type;
 
 public:
+
+	/**
+	 * Default constructor.
+	 */
+	ContainerPainter() {};
+
+	/**
+	 * Copy constructor.
+	 */
+	ContainerPainter(const ContainerPainter& other);
 
 	/**
 	 * Overwritten from Painter.
@@ -64,7 +73,7 @@ public:
 	 *
 	 * @return The number of painters.
 	 */
-	unsigned int size() { return _painterOffsets.size(); }
+	unsigned int size() { return _content.size(); }
 
 	/**
 	 * Recomputes the size of this painter based on the containing painter's
@@ -84,8 +93,10 @@ public:
 
 private:
 
+	void copy(const ContainerPainter& other);
+
 	// the painters this container stores
-	painter_offsets _painterOffsets;
+	std::vector<content_type> _content;
 
 	// shared mutex to protect the painters
 	boost::shared_mutex _paintersMutex;

@@ -5,6 +5,12 @@ namespace gui {
 
 static logger::LogChannel containerpainterlog("containerpainterlog", "[ContainerPainter] ");
 
+ContainerPainter::ContainerPainter(const ContainerPainter& other) :
+	gui::Painter(other) {
+
+	copy(other);
+}
+
 bool
 ContainerPainter::draw(
 			const util::rect<double>&  roi,
@@ -22,8 +28,8 @@ ContainerPainter::draw(
 	// draw each painter at its offset position in reverse order, such that the 
 	// painter who gets the signals first is drawn last (i.e., on top of the 
 	// others)
-	for (painter_offsets::reverse_iterator i = _painterOffsets.rbegin();
-	     i != _painterOffsets.rend(); i++) {
+	for (std::vector<content_type>::reverse_iterator i = _content.rbegin();
+	     i != _content.rend(); i++) {
 
 		const boost::shared_ptr<Painter>& painter = i->first;
 		const util::point<double>&        offset  = i->second;
@@ -63,7 +69,7 @@ ContainerPainter::add(boost::shared_ptr<Painter> painter, const util::point<doub
 		                             << typeName(*painter) << std::endl;
 
 		// store it in list
-		_painterOffsets.push_back(painter_offset(painter, offset));
+		_content.push_back(content_type(painter, offset));
 	}
 
 	// update size of this painter
@@ -80,11 +86,11 @@ ContainerPainter::remove(boost::shared_ptr<Painter> painter) {
 		boost::unique_lock<boost::shared_mutex> lock(_paintersMutex);
 
 		// remove painter from list
-		for (painter_offsets::iterator i = _painterOffsets.begin(); i != _painterOffsets.end(); i++) {
+		for (std::vector<content_type>::iterator i = _content.begin(); i != _content.end(); i++) {
 
 			if ((*i).first == painter) {
 
-				_painterOffsets.erase(i);
+				_content.erase(i);
 
 				LOG_ALL(containerpainterlog) << "removed." << std::endl;
 
@@ -105,7 +111,7 @@ ContainerPainter::clear() {
 		boost::unique_lock<boost::shared_mutex> lock(_paintersMutex);
 
 		// remove from list
-		_painterOffsets.clear();
+		_content.clear();
 	}
 
 	// update size of this painter
@@ -122,7 +128,7 @@ ContainerPainter::updateSize() {
 
 	util::rect<double> size(0.0, 0.0, 0.0, 0.0);
 
-	if (_painterOffsets.size() == 0) {
+	if (_content.size() == 0) {
 
 		setSize(size);
 		return;
@@ -131,12 +137,12 @@ ContainerPainter::updateSize() {
 	LOG_ALL(containerpainterlog) << "I have at least one painter" << std::endl;
 
 	// initialise size to size of first painter + offset of first painter
-	size = _painterOffsets.begin()->first->getSize() + _painterOffsets.begin()->second;
+	size = _content.begin()->first->getSize() + _content.begin()->second;
 
 	LOG_ALL(containerpainterlog) << "size of the first painter is " << size << std::endl;
 
 	// get the min and max values over remaining painters
-	for (painter_offsets::iterator i = _painterOffsets.begin() + 1; i != _painterOffsets.end(); i++) {
+	for (std::vector<content_type>::iterator i = _content.begin() + 1; i != _content.end(); i++) {
 
 		const util::rect<double>&  painterSize = i->first->getSize();
 		const util::point<double>& offset      = i->second;
@@ -163,17 +169,17 @@ ContainerPainter::setOffsets(const std::vector<util::point<double> >& offsets) {
 		// get a write lock
 		boost::unique_lock<boost::shared_mutex> lock(_paintersMutex);
 
-		if (offsets.size() != _painterOffsets.size()) {
+		if (offsets.size() != _content.size()) {
 
 			LOG_ERROR(containerpainterlog) << "number of offsets given (" << offsets.size()
 										   << ") does not match number of painters in the container ("
-										   << _painterOffsets.size() << ")" << std::endl;
+										   << _content.size() << ")" << std::endl;
 
 			return;
 		}
 
-		for (unsigned int i = 0; i < _painterOffsets.size(); i++)
-			_painterOffsets[i].second = offsets[i];
+		for (unsigned int i = 0; i < _content.size(); i++)
+			_content[i].second = offsets[i];
 	}
 
 	updateSize();
@@ -182,12 +188,18 @@ ContainerPainter::setOffsets(const std::vector<util::point<double> >& offsets) {
 ContainerPainter&
 ContainerPainter::operator=(const ContainerPainter& other) {
 
+	copy(other);
+
+	return *this;
+}
+
+void
+ContainerPainter::copy(const ContainerPainter& other) {
+
 	LOG_DEBUG(containerpainterlog) << "assigning new content" << std::endl;
 
 	setSize(other.getSize());
-	_painterOffsets = other._painterOffsets;
-
-	return *this;
+	_content = other._content;
 }
 
 } // namespace gui
