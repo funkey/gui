@@ -91,6 +91,9 @@ ZoomPainter::drag(const util::point<double>& direction) {
 bool
 ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& resolution) {
 
+	if (!_content)
+		return false;
+
 	LOG_ALL(zoompainterlog) << "drawing" << std::endl;
 
 	LOG_ALL(zoompainterlog) << "shift is " << _shift << ", scale is " << _scale << std::endl;
@@ -116,7 +119,7 @@ ZoomPainter::updateScaleAndShift() {
 	_autoShift = util::point<double>(0, 0);
 
 	// first, apply autoscale transformation (if wanted)
-	if (_autoscale) {
+	if (_autoscale && _content) {
 
 		const util::rect<double>& contentSize = _content->getSize();
 

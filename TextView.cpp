@@ -42,6 +42,9 @@ TextView::onUpdate(const pipeline::Update& /*signal*/) {
 
 		LOG_ALL(textviewlog) << "I'm dirty, resetting my text" << std::endl;
 
+		if (!_painter)
+			_painter = new TextPainter();
+
 		_painter->setText(_text);
 		_dirty = false;
 

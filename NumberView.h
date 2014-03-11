@@ -34,6 +34,7 @@ private:
 
 template <typename Precision>
 NumberView<Precision>::NumberView(int precision) :
+	_painter(new TextPainter()),
 	_precision(precision) {
 
 	registerInput(_value, "value");

@@ -6,7 +6,7 @@ namespace gui {
 static logger::LogChannel zoomviewlog("zoomviewlog", "[ZoomView] ");
 
 ZoomView::ZoomView(bool autoscale) :
-		_zoomed(boost::make_shared<ZoomPainter>()),
+		_zoomed(new ZoomPainter()),
 		_zoomStep(1.1),
 		_dragging(false),
 		_autoscale(autoscale) {
@@ -77,6 +77,7 @@ ZoomView::updateOutputs() {
 
 	LOG_ALL(zoomviewlog) << "\"updating\" output..." << std::endl;
 
+	_zoomed->setContent(_content);
 	_zoomed->updateScaleAndShift();
 }
  
@@ -92,15 +93,9 @@ ZoomView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
 
 	LOG_ALL(zoomviewlog) << "got a new painter" << std::endl;
 
-	if (!_zoomed)
-		_zoomed = new ZoomPainter();
-
-	_zoomed->setContent(_content);
-
 	setDirty(_zoomed);
 
 	_contentChanged();
-	_sizeChanged(SizeChanged(_zoomed->getSize()));
 }
 
 void

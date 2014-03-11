@@ -26,7 +26,8 @@ class ContainerView : public pipeline::SimpleProcessNode<>, public PointerSignal
 public:
 
 	ContainerView(std::string name = "") :
-			SimpleProcessNode<>(name) {
+			SimpleProcessNode<>(name),
+			_container(new ContainerPainter()) {
 
 		registerInputs(_painters, "painters");
 		registerOutput(_container, "container");
@@ -57,8 +58,11 @@ private:
 
 	void updateOutputs() {
 
+		updateSetPainters();
 		updateOffsets();
-		_container->setOffsets(_offsets);
+		updatePainter();
+
+		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
 	bool filter(PointerSignal& signal, unsigned int i) {
@@ -74,43 +78,25 @@ private:
 		return true;
 	}
 
-	void onPainterAdded(const pipeline::InputAdded<Painter>& signal) {
+	void onPainterAdded(const pipeline::InputAdded<Painter>&) {
 
-		LOG_ALL(containerviewlog) << getName() << ": got a new painter " << typeName(*signal.getData()) << std::endl;
-
-		if (!_container)
-			_container = new gui::ContainerPainter();
-
-		_container->add(signal.getData());
+		LOG_ALL(containerviewlog) << getName() << ": got a new painter" << std::endl;
 
 		setDirty(_container);
-
-		_contentChanged(ContentChanged());
-		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
-	void onPainterRemoved(const pipeline::InputRemoved<Painter>& signal) {
+	void onPainterRemoved(const pipeline::InputRemoved<Painter>&) {
 
-		LOG_ALL(containerviewlog) << getName() << ": " << "painter removed " << typeName(*signal.getData()) << std::endl;
-
-		_container->remove(signal.getData());
+		LOG_ALL(containerviewlog) << getName() << ": " << "painter removed" << std::endl;
 
 		setDirty(_container);
-
-		_contentChanged(ContentChanged());
-		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
 	void onPaintersCleared(const pipeline::InputsCleared&) {
 
 		LOG_ALL(containerviewlog) << getName() << ": " << "painters cleared" << std::endl;
 
-		_container->clear();
-
 		setDirty(_container);
-
-		_contentChanged(ContentChanged());
-		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
 	void onContentChanged(const ContentChanged& signal) {
@@ -125,8 +111,6 @@ private:
 		LOG_ALL(containerviewlog) << getName() << ": " << "got a SizeChanged signal -- recomputing my size" << std::endl;
 
 		_container->updateSize();
-		setDirty(_container);
-
 		_sizeChanged(SizeChanged(_container->getSize()));
 	}
 
@@ -140,13 +124,43 @@ private:
 		_keyUp(signal);
 	}
 
+	/**
+	 * From all the painter inputs, collect the ones that are really set to 
+	 * valid painters.
+	 */
+	void updateSetPainters() {
+
+		_setPainters.clear();
+		for (unsigned int i = 0; i < _painters.size(); i++)
+			if (_painters[i].isSet()) {
+
+				LOG_ALL(containerviewlog) << getName() << ": " << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
+				_setPainters.push_back(_painters[i].getSharedPointer());
+			}
+	}
+
+	/**
+	 * According to the placing strategy, update the offsets of the set 
+	 * painters.
+	 */
 	void updateOffsets() {
 
 		LOG_ALL(containerviewlog) << getName() << ": " << "updating offsets of painters:" << std::endl;
-		for (unsigned int i = 0; i < _painters.size(); i++)
-			LOG_ALL(containerviewlog) << getName() << ": " << typeName(_painters[i]) << ": " << _painters[i]->getSize() << std::endl;
 
-		_offsets = PlacingStrategy::getOffsets(_painters.begin(), _painters.end());
+		_offsets = PlacingStrategy::getOffsets(_setPainters.begin(), _setPainters.end());
+	}
+
+	/**
+	 * Add the set painters with their offsets to the output painter.
+	 */
+	void updatePainter() {
+
+		_container->clear();
+
+		assert(_setPainters.size() == _offsets.size());
+
+		for (unsigned int i = 0; i < _setPainters.size(); i++)
+			_container->add(_setPainters[i], _offsets[i]);
 	}
 
 	// input/output
@@ -156,16 +170,17 @@ private:
 
 	// backward signals
 
-	signals::Slot<const KeyDown>          _keyDown;
-	signals::Slot<const KeyUp>            _keyUp;
+	signals::Slot<const KeyDown> _keyDown;
+	signals::Slot<const KeyUp>   _keyUp;
 
 	// forward signals
 
-	signals::Slot<const ContentChanged>      _contentChanged;
-	signals::Slot<const SizeChanged>         _sizeChanged;
+	signals::Slot<const ContentChanged> _contentChanged;
+	signals::Slot<const SizeChanged>    _sizeChanged;
 
-	// the offsets of the painters in the container
-	std::vector<util::point<double> > _offsets;
+	// the set painters and their offsets in the container
+	std::vector<boost::shared_ptr<Painter> > _setPainters;
+	std::vector<util::point<double> >        _offsets;
 };
 
 } // namespace gui

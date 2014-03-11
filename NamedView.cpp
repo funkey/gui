@@ -7,8 +7,8 @@ namespace gui {
 logger::LogChannel namedviewlog("namedviewlog", "[NamedView] ");
 
 NamedView::NamedView(const std::string& name) :
-	_textView(boost::make_shared<TextView>(name)),
-	_container(boost::make_shared<ContainerView<VerticalPlacing> >(name)),
+	_textView(new TextView(name)),
+	_container(new ContainerView<VerticalPlacing>(name)),
 	_contentAdded(false) {
 
 	registerInput(_content, "painter");
