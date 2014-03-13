@@ -18,10 +18,7 @@ NamedView::NamedView(const std::string& name) :
 }
 
 void
-NamedView::updateOutputs() {
-
-	LOG_DEBUG(namedviewlog) << "update called" << std::endl;
-}
+NamedView::updateOutputs() {}
 
 void
 NamedView::onInputSet(const pipeline::InputSetBase& /*signal*/) {
