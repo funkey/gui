@@ -324,7 +324,7 @@ Window::redraw() {
 
 	LOG_ALL(winlog) << "[" << getCaption() << "] redrawing my content" << endl;
 
-	if (_painter) {
+	if (_painter.isSet()) {
 
 		// make sure the painter is up-to-date
 		LOG_ALL(winlog) << "[" << getCaption() << "] updating inputs" << endl;
