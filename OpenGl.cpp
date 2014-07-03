@@ -125,17 +125,26 @@ OpenGl::Guard::Guard() :
 
 		_deactivateContext = false;
 
-		return;
+	} else {
+
+		LOG_ALL(opengllog) << "[Guard] activating context" << std::endl;
+
+		// activate the context for this thread
+		if (!_openGl->_context->activate())
+			LOG_ERROR(opengllog) << "[Guard] failed to activate context for this thread" << std::endl;
+
+		// remember to deactivate it on destruction
+		_deactivateContext = true;
 	}
 
-	LOG_ALL(opengllog) << "[Guard] activating context" << std::endl;
-
-	// activate the context for this thread
-	if (!_openGl->_context->activate())
-		LOG_ERROR(opengllog) << "[Guard] failed to activate context for this thread" << std::endl;
-
-	// remember to deactivate it on destruction
-	_deactivateContext = true;
+	// reset OpenGl settings
+	glColor3f(1.0, 1.0, 1.0);
+	glEnable(GL_BLEND);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_COLOR_MATERIAL);
+	glDisable(GL_TEXTURE_2D);
 }
 
 OpenGl::Guard::Guard(GlContextCreator* contextCreator) :
