@@ -40,6 +40,8 @@ SliderPainter::draw(
 
 	const util::rect<double>& size = getSize();
 
+	glDisable(GL_DEPTH_TEST);
+
 	glLineWidth(1);
 	glDisable(GL_LINE_SMOOTH);
 
@@ -49,10 +51,10 @@ SliderPainter::draw(
 	glEnd();
 
 	glBegin(GL_QUADS);
-	glVertex2d(_graspSize.minX, _graspSize.minY);
-	glVertex2d(_graspSize.maxX, _graspSize.minY);
-	glVertex2d(_graspSize.maxX, _graspSize.maxY);
 	glVertex2d(_graspSize.minX, _graspSize.maxY);
+	glVertex2d(_graspSize.maxX, _graspSize.maxY);
+	glVertex2d(_graspSize.maxX, _graspSize.minY);
+	glVertex2d(_graspSize.minX, _graspSize.minY);
 	glEnd();
 
 	return false;

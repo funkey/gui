@@ -443,6 +443,8 @@ TextPainter::drawText() {
 	// ensure a valid opengl context
 	OpenGl::Guard guard;
 
+	glDisable(GL_DEPTH_TEST);
+
 	// bind buffer
 	glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, _buf));
 
