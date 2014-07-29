@@ -8,6 +8,7 @@ namespace gui {
 static logger::LogChannel rotateviewlog("rotateviewlog", "[RotateView] ");
 
 RotateView::RotateView() :
+		_rotated(new RotatePainter()),
 		_x(0.0),
 		_y(1.0),
 		_z(0.0),
@@ -17,26 +18,21 @@ RotateView::RotateView() :
 		_prevZ(0.0),
 		_prevW(0.0),
 		_buttonDown(0, 0),
-		_dragging(false) {
+		_dragging(false),
+		_contentChanged(true) {
 
 	registerInput(_content, "painter");
 	registerOutput(_rotated, "painter");
 
-	_content.registerSlot(_update);
 	_content.registerSlot(_keyDown);
 	_content.registerSlot(_keyUp);
 	_content.registerSlot(_mouseDown);
 	_content.registerSlot(_mouseUp);
 	_content.registerSlot(_mouseMove);
-	_content.registerCallback(&RotateView::onInputSet, this);
 	_content.registerCallback(&RotateView::onModified, this);
-	_content.registerCallback(&RotateView::onContentChanged, this);
 	_content.registerCallback(&RotateView::onSizeChanged, this);
 
-	_rotated.registerSlot(_modified);
-	_rotated.registerSlot(_contentChanged);
 	_rotated.registerSlot(_sizeChanged);
-	_rotated.registerCallback(&RotateView::onUpdate, this);
 	_rotated.registerCallback(&RotateView::onKeyUp, this);
 	_rotated.registerCallback(&RotateView::onKeyDown, this);
 	_rotated.registerCallback(&RotateView::onMouseUp, this);
@@ -45,29 +41,23 @@ RotateView::RotateView() :
 }
 
 void
-RotateView::onInputSet(const pipeline::InputSet<Painter>& /*signal*/) {
+RotateView::updateOutputs() {
 
-	LOG_ALL(rotateviewlog) << "got a new painter" << std::endl;
+	LOG_ALL(rotateviewlog) << "updating output" << std::endl;
 
-	if (!_rotated)
-		_rotated = new RotatePainter();
+	if (_contentChanged) {
 
-	_rotated->setContent(_content);
+		_rotated->setContent(_content);
+		_contentChanged = false;
+	}
 
-	_modified();
+	_rotated->setRotation(_x, _y, _z, _w/M_PI*180.0);
 }
 
 void
 RotateView::onModified(const pipeline::Modified& /*signal*/) {
 
-	// just pass this signal on
-	_modified();
-}
-
-void
-RotateView::onContentChanged(const ContentChanged& /*signal*/) {
-
-	_contentChanged();
+	_contentChanged = true;
 }
 
 void
@@ -76,14 +66,6 @@ RotateView::onSizeChanged(const SizeChanged& /*signal*/) {
 	_rotated->updateSize();
 
 	_sizeChanged(SizeChanged(_rotated->getSize()));
-}
-
-void
-RotateView::onUpdate(const pipeline::Update& signal) {
-
-	_update(signal);
-
-	_rotated->setRotation(_x, _y, _z, _w/M_PI*180.0);
 }
 
 void
@@ -105,7 +87,7 @@ RotateView::onKeyDown(KeyDown& signal) {
 		_x = _z = _w = 0.0;
 		_y = 1.0;
 
-		_modified();
+		setDirty(_rotated);
 
 		signal.processed = true;
 
@@ -176,7 +158,7 @@ RotateView::onMouseMove(MouseMove& signal) {
 		_rotated->setHighlight(_rotated->getSize().contains(signal.position));
 
 		if (wasHighlighted != _rotated->isHighlighted())
-			_modified();
+			setDirty(_rotated);
 	}
 
 	MouseMove unrotatedSignal = signal;
@@ -207,7 +189,7 @@ RotateView::onMouseMove(MouseMove& signal) {
 		// change the current rotation according to mouse movement
 		rotate(moved);
 
-		_modified();
+		setDirty(_rotated);
 
 		signal.processed = true;
 

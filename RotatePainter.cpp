@@ -12,6 +12,9 @@ RotatePainter::RotatePainter() :
 void
 RotatePainter::setContent(boost::shared_ptr<Painter> content) {
 
+	if (!content)
+		return;
+
 	_content = content;
 
 	updateSize();
@@ -28,6 +31,9 @@ RotatePainter::setRotation(double x, double y, double z, double w) {
 
 bool
 RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& resolution) {
+
+	if (!_content)
+		return false;
 
 	OpenGl::Guard guard;
 
@@ -88,6 +94,9 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 
 void
 RotatePainter::updateSize() {
+
+	if (!_content)
+		return;
 
 	util::rect<double> size = _content->getSize();
 
