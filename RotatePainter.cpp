@@ -41,6 +41,11 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 
 	glPushMatrix();
 
+	// set the light position (before rotating), but don't turn it on, yet
+	GLfloat lightpos[] = {-1.0, 1.0, -1.0, 0.0};
+	glLightfv(GL_LIGHT1, GL_POSITION, lightpos);
+	glDisable(GL_LIGHTING);
+
 	glTranslated( _centerX,  _centerY,  _centerZ);
 	glRotated(_w, _x, _y, _z);
 	glTranslated(-_centerX, -_centerY, -_centerZ);
@@ -83,6 +88,17 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	glVertex2f(lr.x, lr.y);
 	glVertex2f(ul.x, lr.y);
 	glEnd();
+
+	// turn on the light
+	glEnable(GL_LIGHTING);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LIGHT1);
+	GLfloat ambient[] = {0.5, 0.5, 0.5, 1.0};
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+	GLfloat specular[] = {0.3, 0.3, 0.3, 1.0};
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specular);
+	GLfloat diffuse[] = {0.5, 0.5, 0.5, 1.0};
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);
 
 	// draw content
 	bool wantsRedraw = _content->draw(roi, resolution);
