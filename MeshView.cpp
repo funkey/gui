@@ -2,7 +2,7 @@
 
 MeshView::MeshView() {
 
-	registerInput(_mesh, "mesh");
+	registerInput(_meshes, "meshes");
 	registerOutput(_painter, "painter");
 }
 
@@ -12,5 +12,5 @@ MeshView::updateOutputs() {
 	if (!_painter)
 		_painter = new MeshPainter();
 
-	_painter->setMesh(_mesh);
+	_painter->setMeshes(_meshes);
 }

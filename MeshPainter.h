@@ -2,19 +2,19 @@
 #define GUI_MESH_PAINTER_H__
 
 #include "RecordablePainter.h"
-#include "Mesh.h"
+#include "Meshes.h"
 
 class MeshPainter : public gui::RecordablePainter {
 
 public:
 
-	void setMesh(boost::shared_ptr<Mesh> mesh);
+	void setMeshes(boost::shared_ptr<Meshes> meshes);
 
 private:
 
 	void updateRecording();
 
-	boost::shared_ptr<Mesh> _mesh;
+	boost::shared_ptr<Meshes> _meshes;
 };
 
 #endif // GUI_MESH_PAINTER_H__

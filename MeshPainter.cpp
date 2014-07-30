@@ -1,17 +1,18 @@
 #include <util/Logger.h>
+#include <gui/Colors.h>
 #include "MeshPainter.h"
 
 logger::LogChannel meshpainterlog("meshpainterlog", "[MeshPainter] ");
 
 void
-MeshPainter::setMesh(boost::shared_ptr<Mesh> mesh) {
+MeshPainter::setMeshes(boost::shared_ptr<Meshes> meshes) {
 
-	if (!mesh)
+	if (!meshes)
 		return;
 
-	_mesh = mesh;
+	_meshes = meshes;
 
-	util::rect<double> size = util::rect<double>(mesh->minX(), mesh->minY(), mesh->maxX(), mesh->maxY());
+	util::rect<double> size = util::rect<double>(meshes->minX(), meshes->minY(), meshes->maxX(), meshes->maxY());
 
 	LOG_ALL(meshpainterlog) << "setting size to " << size << std::endl;
 
@@ -28,31 +29,34 @@ MeshPainter::updateRecording() {
 
 	startRecording();
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHT0);
-	glDisable(GL_CULL_FACE);
-	glColor3f(1.0, 0.2, 0.4);
-	GLfloat lightpos[] = {0.5, 1.0, 1.0, 0.0};
-	glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
+	foreach (unsigned int id, _meshes->getMeshIds()) {
 
-	const std::vector<Triangle>& triangles = _mesh->getTriangles();
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_CULL_FACE);
 
-	glBegin(GL_TRIANGLES);
-	foreach (const Triangle& triangle, triangles) {
+		// colorize the mesh according to its id
+		unsigned char r, g, b;
+		idToRgb(id, r, g, b);
+		glColor3f(static_cast<float>(r)/255.0, static_cast<float>(g)/255.0, static_cast<float>(b)/255.0);
 
-		const Point3d&  v0 = _mesh->getVertex(triangle.v0);
-		const Point3d&  v1 = _mesh->getVertex(triangle.v1);
-		const Point3d&  v2 = _mesh->getVertex(triangle.v2);
-		const Vector3d& n0 = _mesh->getNormal(triangle.v0);
-		const Vector3d& n1 = _mesh->getNormal(triangle.v1);
-		const Vector3d& n2 = _mesh->getNormal(triangle.v2);
+		const std::vector<Triangle>& triangles = _meshes->get(id)->getTriangles();
 
-		glNormal3f(n0.x, n0.y, n0.z); glVertex3f(v0.x, v0.y, v0.z);
-		glNormal3f(n1.x, n1.y, n1.z); glVertex3f(v1.x, v1.y, v1.z);
-		glNormal3f(n2.x, n2.y, n2.z); glVertex3f(v2.x, v2.y, v2.z);
+		glBegin(GL_TRIANGLES);
+		foreach (const Triangle& triangle, triangles) {
+
+			const Point3d&  v0 = _meshes->get(id)->getVertex(triangle.v0);
+			const Point3d&  v1 = _meshes->get(id)->getVertex(triangle.v1);
+			const Point3d&  v2 = _meshes->get(id)->getVertex(triangle.v2);
+			const Vector3d& n0 = _meshes->get(id)->getNormal(triangle.v0);
+			const Vector3d& n1 = _meshes->get(id)->getNormal(triangle.v1);
+			const Vector3d& n2 = _meshes->get(id)->getNormal(triangle.v2);
+
+			glNormal3f(n0.x, n0.y, n0.z); glVertex3f(v0.x, v0.y, v0.z);
+			glNormal3f(n1.x, n1.y, n1.z); glVertex3f(v1.x, v1.y, v1.z);
+			glNormal3f(n2.x, n2.y, n2.z); glVertex3f(v2.x, v2.y, v2.z);
+		}
+		glEnd();
 	}
-	glEnd();
 
 	stopRecording();
 }

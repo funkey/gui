@@ -14,7 +14,7 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<Mesh>         _mesh;
+	pipeline::Input<Meshes>       _meshes;
 	pipeline::Output<MeshPainter> _painter;
 };
 
