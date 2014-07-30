@@ -23,8 +23,16 @@
  * A point in 3D with an id.
  */
 struct Point3dId {
+
 	unsigned int newId;
 	float x, y, z;
+
+	// default constructor
+	Point3dId() {}
+
+	// construction from Point3d
+	Point3dId(const Point3d& p) :
+		newId(0), x(p.x), y(p.y), z(p.z) {};
 
 	// conversion to regular Point3d
 	operator Point3d () {
@@ -70,6 +78,40 @@ class MarchingCubes {
 
 public:
 
+	/**
+	 * Functor to find surfaces of components with a gray value above the given 
+	 * threshold.
+	 */
+	struct AcceptAbove {
+
+		AcceptAbove(value_type threshold_) :
+			threshold(threshold_) {}
+
+		bool operator()(value_type value) const {
+
+			return value > threshold;
+		}
+
+		value_type threshold;
+	};
+
+	/**
+	 * Functor to find surfaces of components with a gray value that is exactly 
+	 * the given value.
+	 */
+	struct AcceptExactly {
+
+		AcceptExactly(value_type reference_) :
+			reference(reference_) {}
+
+		bool operator()(value_type value) const {
+
+			return value == reference;
+		}
+
+		value_type reference;
+	};
+
 	// Constructor and destructor.
 	MarchingCubes();
 	~MarchingCubes();
@@ -89,9 +131,10 @@ public:
 	 * @param cellSizeZ
 	 *              The size of a cell in z to sample.
 	 */
+	template <typename InteriorTest>
 	boost::shared_ptr<Mesh> generateSurface(
 			const Volume& volume,
-			value_type isoLevel,
+			const InteriorTest& interiorTest,
 			float cellSizeX,
 			float cellSizeY,
 			float cellSizeZ);
@@ -176,7 +219,155 @@ private:
 	// Lookup tables used in the construction of the isosurface.
 	static const unsigned int _edgeTable[256];
 	static const unsigned int _triTable[256][16];
+
+	static const unsigned int None = -1;
 };
+
+
+template <typename Volume>
+template <typename InteriorTest>
+boost::shared_ptr<Mesh>
+MarchingCubes<Volume>::generateSurface(
+		const Volume& volume,
+		const InteriorTest& interiorTest,
+		float cellSizeX,
+		float cellSizeY,
+		float cellSizeZ)
+{
+	if (_bValidSurface)
+		deleteSurface();
+
+	_mesh = boost::make_shared<Mesh>();
+
+	float width  = volume.width();
+	float height = volume.height();
+	float depth  = volume.depth();
+
+	_nCellsX = ceil(width /cellSizeX) - 1;
+	_nCellsY = ceil(height/cellSizeY) - 1;
+	_nCellsZ = ceil(depth /cellSizeZ) - 1;
+	_cellSizeX = cellSizeX;
+	_cellSizeY = cellSizeY;
+	_cellSizeZ = cellSizeZ;
+
+	// Generate isosurface.
+	for (unsigned int z = 0; z < _nCellsZ; z++)
+		for (unsigned int y = 0; y < _nCellsY; y++)
+			for (unsigned int x = 0; x < _nCellsX; x++) {
+				// Calculate table lookup index from those
+				// vertices which are below the isolevel.
+				unsigned int tableIndex = 0;
+				if (!interiorTest(getValue(volume, x, y, z)))
+					tableIndex |= 1;
+				if (!interiorTest(getValue(volume, x, y+1, z)))
+					tableIndex |= 2;
+				if (!interiorTest(getValue(volume, x+1, y+1, z)))
+					tableIndex |= 4;
+				if (!interiorTest(getValue(volume, x+1, y, z)))
+					tableIndex |= 8;
+				if (!interiorTest(getValue(volume, x, y, z+1)))
+					tableIndex |= 16;
+				if (!interiorTest(getValue(volume, x, y+1, z+1)))
+					tableIndex |= 32;
+				if (!interiorTest(getValue(volume, x+1, y+1, z+1)))
+					tableIndex |= 64;
+				if (!interiorTest(getValue(volume, x+1, y, z+1)))
+					tableIndex |= 128;
+
+				// Now create a triangulation of the isosurface in this
+				// cell.
+				if (_edgeTable[tableIndex] != 0) {
+					if (_edgeTable[tableIndex] & 8) {
+						Point3dId pt = CalculateIntersection(volume, x, y, z, 3);
+						unsigned int id = GetEdgeId(x, y, z, 3);
+						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+					}
+					if (_edgeTable[tableIndex] & 1) {
+						Point3dId pt = CalculateIntersection(volume, x, y, z, 0);
+						unsigned int id = GetEdgeId(x, y, z, 0);
+						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+					}
+					if (_edgeTable[tableIndex] & 256) {
+						Point3dId pt = CalculateIntersection(volume, x, y, z, 8);
+						unsigned int id = GetEdgeId(x, y, z, 8);
+						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+					}
+					
+					if (x == _nCellsX - 1) {
+						if (_edgeTable[tableIndex] & 4) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 2);
+							unsigned int id = GetEdgeId(x, y, z, 2);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+						if (_edgeTable[tableIndex] & 2048) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 11);
+							unsigned int id = GetEdgeId(x, y, z, 11);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					}
+					if (y == _nCellsY - 1) {
+						if (_edgeTable[tableIndex] & 2) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 1);
+							unsigned int id = GetEdgeId(x, y, z, 1);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+						if (_edgeTable[tableIndex] & 512) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 9);
+							unsigned int id = GetEdgeId(x, y, z, 9);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					}
+					if (z == _nCellsZ - 1) {
+						if (_edgeTable[tableIndex] & 16) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 4);
+							unsigned int id = GetEdgeId(x, y, z, 4);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+						if (_edgeTable[tableIndex] & 128) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 7);
+							unsigned int id = GetEdgeId(x, y, z, 7);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					}
+					if ((x==_nCellsX - 1) && (y==_nCellsY - 1))
+						if (_edgeTable[tableIndex] & 1024) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 10);
+							unsigned int id = GetEdgeId(x, y, z, 10);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					if ((x==_nCellsX - 1) && (z==_nCellsZ - 1))
+						if (_edgeTable[tableIndex] & 64) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 6);
+							unsigned int id = GetEdgeId(x, y, z, 6);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					if ((y==_nCellsY - 1) && (z==_nCellsZ - 1))
+						if (_edgeTable[tableIndex] & 32) {
+							Point3dId pt = CalculateIntersection(volume, x, y, z, 5);
+							unsigned int id = GetEdgeId(x, y, z, 5);
+							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
+						}
+					
+					for (unsigned int i = 0; _triTable[tableIndex][i] != None; i += 3) {
+						TriangleId triangle;
+						unsigned int pointId0, pointId1, pointId2;
+						pointId0 = GetEdgeId(x, y, z, _triTable[tableIndex][i]);
+						pointId1 = GetEdgeId(x, y, z, _triTable[tableIndex][i+1]);
+						pointId2 = GetEdgeId(x, y, z, _triTable[tableIndex][i+2]);
+						triangle.pointId[0] = pointId0;
+						triangle.pointId[1] = pointId1;
+						triangle.pointId[2] = pointId2;
+						_trivecTriangles.push_back(triangle);
+					}
+				}
+			}
+	
+	RenameVerticesAndTriangles();
+	CalculateNormals();
+	_bValidSurface = true;
+
+	return _mesh;
+}
 
 #endif // GUI_MARCHING_CUBES_H__
 

@@ -41,8 +41,6 @@ const unsigned int MarchingCubes<Volume>::_edgeTable[256] = {
 	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 };
 
-static const unsigned int None = -1;
-
 template <typename Volume>
 const unsigned int MarchingCubes<Volume>::_triTable[256][16] = {
 	{None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None},
@@ -315,7 +313,6 @@ MarchingCubes<Volume>::MarchingCubes()
 	_nTriangles = 0;
 	_nNormals = 0;
 	_nVertices = 0;
-	_tIsoLevel = 0;
 	_bValidSurface = false;
 }
 
@@ -323,153 +320,6 @@ template <typename Volume>
 MarchingCubes<Volume>::~MarchingCubes()
 {
 	deleteSurface();
-}
-
-template <typename Volume>
-boost::shared_ptr<Mesh>
-MarchingCubes<Volume>::generateSurface(
-		const Volume& volume,
-		value_type isoLevel,
-		float cellSizeX,
-		float cellSizeY,
-		float cellSizeZ)
-{
-	if (_bValidSurface)
-		deleteSurface();
-
-	_mesh = boost::make_shared<Mesh>();
-
-	float width  = volume.width();
-	float height = volume.height();
-	float depth  = volume.depth();
-
-	_tIsoLevel = isoLevel;
-	_nCellsX = ceil(width /cellSizeX) - 1;
-	_nCellsY = ceil(height/cellSizeY) - 1;
-	_nCellsZ = ceil(depth /cellSizeZ) - 1;
-	_cellSizeX = cellSizeX;
-	_cellSizeY = cellSizeY;
-	_cellSizeZ = cellSizeZ;
-
-	LOG_DEBUG(marchingcubeslog) << "number of cells: " << _nCellsX << ", " << _nCellsY << ", " << _nCellsZ << std::endl;
-
-	// Generate isosurface.
-	for (unsigned int z = 0; z < _nCellsZ; z++)
-		for (unsigned int y = 0; y < _nCellsY; y++)
-			for (unsigned int x = 0; x < _nCellsX; x++) {
-				// Calculate table lookup index from those
-				// vertices which are below the isolevel.
-				unsigned int tableIndex = 0;
-				if (getValue(volume, x, y, z) < _tIsoLevel)
-					tableIndex |= 1;
-				if (getValue(volume, x, y+1, z) < _tIsoLevel)
-					tableIndex |= 2;
-				if (getValue(volume, x+1, y+1, z) < _tIsoLevel)
-					tableIndex |= 4;
-				if (getValue(volume, x+1, y, z) < _tIsoLevel)
-					tableIndex |= 8;
-				if (getValue(volume, x, y, z+1) < _tIsoLevel)
-					tableIndex |= 16;
-				if (getValue(volume, x, y+1, z+1) < _tIsoLevel)
-					tableIndex |= 32;
-				if (getValue(volume, x+1, y+1, z+1) < _tIsoLevel)
-					tableIndex |= 64;
-				if (getValue(volume, x+1, y, z+1) < _tIsoLevel)
-					tableIndex |= 128;
-
-				// Now create a triangulation of the isosurface in this
-				// cell.
-				if (_edgeTable[tableIndex] != 0) {
-					if (_edgeTable[tableIndex] & 8) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 3);
-						unsigned int id = GetEdgeId(x, y, z, 3);
-						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-					}
-					if (_edgeTable[tableIndex] & 1) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 0);
-						unsigned int id = GetEdgeId(x, y, z, 0);
-						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-					}
-					if (_edgeTable[tableIndex] & 256) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 8);
-						unsigned int id = GetEdgeId(x, y, z, 8);
-						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-					}
-					
-					if (x == _nCellsX - 1) {
-						if (_edgeTable[tableIndex] & 4) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 2);
-							unsigned int id = GetEdgeId(x, y, z, 2);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-						if (_edgeTable[tableIndex] & 2048) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 11);
-							unsigned int id = GetEdgeId(x, y, z, 11);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					}
-					if (y == _nCellsY - 1) {
-						if (_edgeTable[tableIndex] & 2) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 1);
-							unsigned int id = GetEdgeId(x, y, z, 1);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-						if (_edgeTable[tableIndex] & 512) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 9);
-							unsigned int id = GetEdgeId(x, y, z, 9);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					}
-					if (z == _nCellsZ - 1) {
-						if (_edgeTable[tableIndex] & 16) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 4);
-							unsigned int id = GetEdgeId(x, y, z, 4);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-						if (_edgeTable[tableIndex] & 128) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 7);
-							unsigned int id = GetEdgeId(x, y, z, 7);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					}
-					if ((x==_nCellsX - 1) && (y==_nCellsY - 1))
-						if (_edgeTable[tableIndex] & 1024) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 10);
-							unsigned int id = GetEdgeId(x, y, z, 10);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					if ((x==_nCellsX - 1) && (z==_nCellsZ - 1))
-						if (_edgeTable[tableIndex] & 64) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 6);
-							unsigned int id = GetEdgeId(x, y, z, 6);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					if ((y==_nCellsY - 1) && (z==_nCellsZ - 1))
-						if (_edgeTable[tableIndex] & 32) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 5);
-							unsigned int id = GetEdgeId(x, y, z, 5);
-							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
-						}
-					
-					for (unsigned int i = 0; _triTable[tableIndex][i] != None; i += 3) {
-						TriangleId triangle;
-						unsigned int pointId0, pointId1, pointId2;
-						pointId0 = GetEdgeId(x, y, z, _triTable[tableIndex][i]);
-						pointId1 = GetEdgeId(x, y, z, _triTable[tableIndex][i+1]);
-						pointId2 = GetEdgeId(x, y, z, _triTable[tableIndex][i+2]);
-						triangle.pointId[0] = pointId0;
-						triangle.pointId[1] = pointId1;
-						triangle.pointId[2] = pointId2;
-						_trivecTriangles.push_back(triangle);
-					}
-				}
-			}
-	
-	RenameVerticesAndTriangles();
-	CalculateNormals();
-	_bValidSurface = true;
-
-	return _mesh;
 }
 
 template <typename Volume>
@@ -490,7 +340,6 @@ void MarchingCubes<Volume>::deleteSurface()
 	_nTriangles = 0;
 	_nNormals = 0;
 	_nVertices = 0;
-	_tIsoLevel = 0;
 	_bValidSurface = false;
 }
 

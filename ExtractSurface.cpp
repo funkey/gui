@@ -19,7 +19,7 @@ ExtractSurface::updateOutputs() {
 
 	_surface = marchingCubes.generateSurface(
 			volume,
-			0.5,
+			MarchingCubes<ImageStackVolumeAdaptor>::AcceptAbove(0.5),
 			10.0,
 			10.0,
 			10.0);
