@@ -68,6 +68,8 @@ private:
 			_maxY = std::max(p.y, _maxY);
 			_maxZ = std::max(p.z, _maxZ);
 		}
+
+		_updateBoundingBox = false;
 	}
 
 	// the vertices of the mesh
