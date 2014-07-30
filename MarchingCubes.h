@@ -173,11 +173,24 @@ private:
 
 	// Calculates the intersection point of the isosurface with an
 	// edge.
-	Point3dId CalculateIntersection(const Volume& volume, unsigned int nX, unsigned int nY, unsigned int nZ, unsigned int nEdgeNo);
+	template <typename InteriorTest>
+	Point3dId CalculateIntersection(
+			const Volume& volume,
+			const InteriorTest& interiorTest,
+			unsigned int nX,
+			unsigned int nY,
+			unsigned int nZ,
+			unsigned int nEdgeNo);
 
-	// Interpolates between two grid points to produce the point at which
-	// the isosurface intersects an edge.
-	Point3dId Interpolate(float fX1, float fY1, float fZ1, float fX2, float fY2, float fZ2, value_type tVal1, value_type tVal2);
+	// Find the point between an interior and an exterior point where the 
+	// surface starts. p1 is assumed to be exterior, p2 is assumed to be 
+	// interior.
+	template <typename InteriorTest>
+	Point3dId findSurfaceIntersection(
+			const Volume& volume,
+			const InteriorTest& interiorTest,
+			const Point3d& p1,
+			const Point3d& p2);
  
 	// Renames vertices and triangles so that they can be accessed more
 	// efficiently.
@@ -278,72 +291,72 @@ MarchingCubes<Volume>::generateSurface(
 				// cell.
 				if (_edgeTable[tableIndex] != 0) {
 					if (_edgeTable[tableIndex] & 8) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 3);
+						Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 3);
 						unsigned int id = GetEdgeId(x, y, z, 3);
 						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 					}
 					if (_edgeTable[tableIndex] & 1) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 0);
+						Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 0);
 						unsigned int id = GetEdgeId(x, y, z, 0);
 						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 					}
 					if (_edgeTable[tableIndex] & 256) {
-						Point3dId pt = CalculateIntersection(volume, x, y, z, 8);
+						Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 8);
 						unsigned int id = GetEdgeId(x, y, z, 8);
 						_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 					}
 					
 					if (x == _nCellsX - 1) {
 						if (_edgeTable[tableIndex] & 4) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 2);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 2);
 							unsigned int id = GetEdgeId(x, y, z, 2);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 						if (_edgeTable[tableIndex] & 2048) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 11);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 11);
 							unsigned int id = GetEdgeId(x, y, z, 11);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 					}
 					if (y == _nCellsY - 1) {
 						if (_edgeTable[tableIndex] & 2) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 1);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 1);
 							unsigned int id = GetEdgeId(x, y, z, 1);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 						if (_edgeTable[tableIndex] & 512) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 9);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 9);
 							unsigned int id = GetEdgeId(x, y, z, 9);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 					}
 					if (z == _nCellsZ - 1) {
 						if (_edgeTable[tableIndex] & 16) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 4);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 4);
 							unsigned int id = GetEdgeId(x, y, z, 4);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 						if (_edgeTable[tableIndex] & 128) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 7);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 7);
 							unsigned int id = GetEdgeId(x, y, z, 7);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 					}
 					if ((x==_nCellsX - 1) && (y==_nCellsY - 1))
 						if (_edgeTable[tableIndex] & 1024) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 10);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 10);
 							unsigned int id = GetEdgeId(x, y, z, 10);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 					if ((x==_nCellsX - 1) && (z==_nCellsZ - 1))
 						if (_edgeTable[tableIndex] & 64) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 6);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 6);
 							unsigned int id = GetEdgeId(x, y, z, 6);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
 					if ((y==_nCellsY - 1) && (z==_nCellsZ - 1))
 						if (_edgeTable[tableIndex] & 32) {
-							Point3dId pt = CalculateIntersection(volume, x, y, z, 5);
+							Point3dId pt = CalculateIntersection(volume, interiorTest, x, y, z, 5);
 							unsigned int id = GetEdgeId(x, y, z, 5);
 							_i2pt3idVertices.insert(Id2Point3dId::value_type(id, pt));
 						}
@@ -367,6 +380,134 @@ MarchingCubes<Volume>::generateSurface(
 	_bValidSurface = true;
 
 	return _mesh;
+}
+
+template <typename Volume>
+template <typename InteriorTest>
+Point3dId MarchingCubes<Volume>::CalculateIntersection(
+		const Volume& volume,
+		const InteriorTest& interiorTest,
+		unsigned int nX,
+		unsigned int nY,
+		unsigned int nZ,
+		unsigned int nEdgeNo)
+{
+	Point3d p1, p2;
+	unsigned int v1x = nX, v1y = nY, v1z = nZ;
+	unsigned int v2x = nX, v2y = nY, v2z = nZ;
+	
+	switch (nEdgeNo)
+	{
+	case 0:
+		v2y += 1;
+		break;
+	case 1:
+		v1y += 1;
+		v2x += 1;
+		v2y += 1;
+		break;
+	case 2:
+		v1x += 1;
+		v1y += 1;
+		v2x += 1;
+		break;
+	case 3:
+		v1x += 1;
+		break;
+	case 4:
+		v1z += 1;
+		v2y += 1;
+		v2z += 1;
+		break;
+	case 5:
+		v1y += 1;
+		v1z += 1;
+		v2x += 1;
+		v2y += 1;
+		v2z += 1;
+		break;
+	case 6:
+		v1x += 1;
+		v1y += 1;
+		v1z += 1;
+		v2x += 1;
+		v2z += 1;
+		break;
+	case 7:
+		v1x += 1;
+		v1z += 1;
+		v2z += 1;
+		break;
+	case 8:
+		v2z += 1;
+		break;
+	case 9:
+		v1y += 1;
+		v2y += 1;
+		v2z += 1;
+		break;
+	case 10:
+		v1x += 1;
+		v1y += 1;
+		v2x += 1;
+		v2y += 1;
+		v2z += 1;
+		break;
+	case 11:
+		v1x += 1;
+		v2x += 1;
+		v2z += 1;
+		break;
+	}
+
+	p1.x = v1x*_cellSizeX;
+	p1.y = v1y*_cellSizeY;
+	p1.z = v1z*_cellSizeZ;
+	p2.x = v2x*_cellSizeX;
+	p2.y = v2y*_cellSizeY;
+	p2.z = v2z*_cellSizeZ;
+
+	value_type val1 = getValue(volume, v1x, v1y, v1z);
+	value_type val2 = getValue(volume, v2x, v2y, v2z);
+
+	if (interiorTest(val1) && !interiorTest(val2))
+		return findSurfaceIntersection(volume, interiorTest, p2, p1);
+	else
+		return findSurfaceIntersection(volume, interiorTest, p1, p2);
+}
+
+template <typename Volume>
+template <typename InteriorTest>
+Point3dId MarchingCubes<Volume>::findSurfaceIntersection(
+		const Volume& volume,
+		const InteriorTest& interiorTest,
+		const Point3d& p1,
+		const Point3d& p2)
+{
+	Point3dId interpolation;
+
+	// binary search for intersection
+	float mu = 0.5;
+	float delta = 0.25;
+
+	// assume that p1 is outside, p2 is inside
+	//
+	// mu == 0 -> p1, mu == 1 -> p2
+	//
+	// incrase  mu -> go to inside
+	// decrease mu -> go to outside
+
+	for (unsigned int i = 0; i < 10; i++, delta /= 2.0) {
+
+		interpolation = p1 + mu*(p2 - p1);
+
+		if (interiorTest(volume(interpolation.x, interpolation.y, interpolation.z)))
+			mu -= delta; // go to outside
+		else
+			mu += delta; // go to inside
+	}
+
+	return interpolation;
 }
 
 #endif // GUI_MARCHING_CUBES_H__
