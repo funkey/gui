@@ -16,6 +16,11 @@ public:
 
 	void setHighlight(bool highlight);
 
+	template <typename T>
+	void setHoverValue(const T& value, double position);
+
+	void unsetHoverValue();
+
 	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
 	const util::rect<double>& getGraspSize();
@@ -37,7 +42,27 @@ private:
 
 	// indicates whether the slider should be highlighted
 	bool _highlight;
+
+	// indicates whether a hover value should be shown
+	bool _showHoverValue;
+
+	// the hover text and its position
+	std::string _hoverText;
+	double      _hoverPosition;
 };
+
+template <typename T>
+void
+SliderPainter::setHoverValue(const T& value, double position) {
+
+	_showHoverValue = true;
+
+	std::ostringstream ss;
+	ss << std::fixed << std::setprecision(2) << value;
+
+	_hoverText = ss.str();
+	_hoverPosition = position;
+}
 
 }
 

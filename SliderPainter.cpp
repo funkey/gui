@@ -1,5 +1,8 @@
+#include <sstream>
+#include <iomanip>
 #include <gui/OpenGl.h>
 #include "SliderPainter.h"
+#include "TextPainter.h"
 
 namespace gui {
 
@@ -28,10 +31,16 @@ SliderPainter::setHighlight(bool highlight) {
 	_highlight = highlight;
 }
 
+void
+SliderPainter::unsetHoverValue() {
+
+	_showHoverValue = false;
+}
+
 bool
 SliderPainter::draw(
-		const util::rect<double>&  /*roi*/,
-		const util::point<double>& /*resolution*/) {
+		const util::rect<double>&  roi,
+		const util::point<double>& resolution) {
 
 	if (_highlight)
 		glColor4f(1.0, 0.75, 0.75, 0.5);
@@ -46,8 +55,8 @@ SliderPainter::draw(
 	glDisable(GL_LINE_SMOOTH);
 
 	glBegin(GL_LINES);
-	glVertex2d(size.minX + size.height()/2, size.minY + size.height()/2);
-	glVertex2d(size.maxX - size.height()/2, size.minY + size.height()/2);
+	glVertex2d(size.minX, size.minY + size.height()/2);
+	glVertex2d(size.maxX, size.minY + size.height()/2);
 	glEnd();
 
 	glBegin(GL_QUADS);
@@ -56,6 +65,30 @@ SliderPainter::draw(
 	glVertex2d(_graspSize.maxX, _graspSize.minY);
 	glVertex2d(_graspSize.minX, _graspSize.minY);
 	glEnd();
+
+	if (_showHoverValue) {
+
+		TextPainter hoverValuePainter;
+
+
+		hoverValuePainter.setText(_hoverText);
+		hoverValuePainter.setTextSize(10/resolution.x);
+
+		util::point<double> offset;
+		offset.x = _hoverPosition - hoverValuePainter.getSize().width()/2.0;
+		offset.y = size.minY + size.height()/2 - 10/resolution.y;
+
+		glBegin(GL_LINES);
+		glVertex2d(_hoverPosition, offset.y);
+		glVertex2d(_hoverPosition, size.minY + size.height()/2);
+		glEnd();
+
+		offset.y -= 10/resolution.y;
+
+		glTranslatef(offset.x, offset.y, 0);
+		hoverValuePainter.draw(roi - offset, resolution);
+		glTranslatef(-offset.x, -offset.y, 0);
+	}
 
 	return false;
 }

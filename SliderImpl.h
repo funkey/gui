@@ -105,6 +105,9 @@ template <typename Precision>
 void
 SliderImpl<Precision>::onMouseDown(MouseDown& signal) {
 
+	if (!_painter->getSize().contains(signal.position))
+		return;
+
 	// left mouse button
 	if (signal.button == buttons::Left) {
 
@@ -114,7 +117,7 @@ SliderImpl<Precision>::onMouseDown(MouseDown& signal) {
 		// the mouse position
 		util::point<double> pos = signal.position;
 
-		// within slider
+		// within grasp
 		if (graspSize.contains(pos)) {
 
 			// the x offset to the center of the grasp
@@ -123,6 +126,19 @@ SliderImpl<Precision>::onMouseDown(MouseDown& signal) {
 
 			// let the sender know that we took care of this input event
 			signal.processed = true;
+
+		// outside of grasp
+		} else {
+
+			double value = _min + (pos.x/_painter->getSize().width())*(_max - _min);
+			value = std::min((double)_max, std::max((double)_min, value));
+
+			*_value = value;
+
+			_painter->setValue(*_value);
+
+			setDirty(_value);
+			setDirty(_painter);
 		}
 	}
 }
@@ -135,6 +151,20 @@ SliderImpl<Precision>::onMouseMove(MouseMove& signal) {
 	const util::rect<double>& graspSize = _painter->getGraspSize();
 
 	util::point<double> pos = signal.position;
+
+	if (size.contains(pos)) {
+
+		double value = _min + (pos.x/size.width())*(_max - _min);
+		value = std::min((double)_max, std::max((double)_min, value));
+
+		_painter->setHoverValue(value, pos.x);
+		setDirty(_painter);
+
+	} else {
+
+		_painter->unsetHoverValue();
+		setDirty(_painter);
+	}
 
 	if (graspSize.contains(pos)) {
 
