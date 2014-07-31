@@ -39,6 +39,8 @@ public:
 	float maxY() { if (_updateBoundingBox) updateBoundingBox(); return _maxY; }
 	float maxZ() { if (_updateBoundingBox) updateBoundingBox(); return _maxZ; }
 
+	void clear() { _meshes.clear(); _ids.clear(); _updateBoundingBox = true; }
+
 private:
 
 	void updateBoundingBox() {
