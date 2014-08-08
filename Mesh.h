@@ -2,6 +2,7 @@
 #define GUI_MESH_H__
 
 #include <vector>
+#include <imageprocessing/Volume.h>
 #include <pipeline/Data.h>
 #include <util/foreach.h>
 #include "Point3d.h"
@@ -11,12 +12,11 @@
 /**
  * A 3D mesh as a list of triangles.
  */
-class Mesh : public pipeline::Data {
+class Mesh : public pipeline::Data, public Volume {
 
 public:
 
-	Mesh() :
-		_updateBoundingBox(true) {}
+	Mesh() {}
 
 	/**
 	 * Set the number of vertices (and normals) to allocate for this mesh.
@@ -41,7 +41,7 @@ public:
 	/**
 	 * Set a vertex by index.
 	 */
-	void setVertex(unsigned int index, const Point3d&  vertex) { _vertices[index] = vertex; _updateBoundingBox = true; }
+	void setVertex(unsigned int index, const Point3d&  vertex) { _vertices[index] = vertex; setBoundingBoxDirty(); }
 
 	/**
 	 * Set a vertex' normal by index.
@@ -94,16 +94,6 @@ public:
 	const std::vector<Triangle>& getTriangles() const { return _triangles; }
 
 	/**
-	 * Get the bounding box of this mesh.
-	 */
-	float minX() { if (_updateBoundingBox) updateBoundingBox(); return _minX; }
-	float minY() { if (_updateBoundingBox) updateBoundingBox(); return _minY; }
-	float minZ() { if (_updateBoundingBox) updateBoundingBox(); return _minZ; }
-	float maxX() { if (_updateBoundingBox) updateBoundingBox(); return _maxX; }
-	float maxY() { if (_updateBoundingBox) updateBoundingBox(); return _maxY; }
-	float maxZ() { if (_updateBoundingBox) updateBoundingBox(); return _maxZ; }
-
-	/**
 	 * Create a submesh from a selection of triangles of this mesh.
 	 *
 	 * @param triangles
@@ -115,22 +105,27 @@ public:
 
 private:
 
-	void updateBoundingBox() {
+	BoundingBox computeBoundingBox() const {
 
-		_minX = _minY = _minZ = std::numeric_limits<float>::max();
-		_maxX = _maxY = _maxZ = std::numeric_limits<float>::min();
+		float minX, minY, minZ;
+		float maxX, maxY, maxZ;
 
-		foreach (Point3d& p, _vertices) {
+		minX = minY = minZ = std::numeric_limits<float>::max();
+		maxX = maxY = maxZ = std::numeric_limits<float>::min();
 
-			_minX = std::min(p.x, _minX);
-			_minY = std::min(p.y, _minY);
-			_minZ = std::min(p.z, _minZ);
-			_maxX = std::max(p.x, _maxX);
-			_maxY = std::max(p.y, _maxY);
-			_maxZ = std::max(p.z, _maxZ);
+		foreach (const Point3d& p, _vertices) {
+
+			minX = std::min(p.x, minX);
+			minY = std::min(p.y, minY);
+			minZ = std::min(p.z, minZ);
+			maxX = std::max(p.x, maxX);
+			maxY = std::max(p.y, maxY);
+			maxZ = std::max(p.z, maxZ);
 		}
 
-		_updateBoundingBox = false;
+		return BoundingBox(
+				minX, minY, minZ,
+				maxX, maxY, maxZ);
 	}
 
 	/**
@@ -146,12 +141,6 @@ private:
 
 	// list of triangles that make up the mesh
 	std::vector<Triangle> _triangles;
-
-	bool _updateBoundingBox;
-
-	float _minX, _maxX;
-	float _minY, _maxY;
-	float _minZ, _maxZ;
 };
 
 #endif // GUI_MESH_H__

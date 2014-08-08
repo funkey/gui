@@ -12,7 +12,12 @@ MeshPainter::setMeshes(boost::shared_ptr<Meshes> meshes) {
 
 	_meshes = meshes;
 
-	util::rect<double> size = util::rect<double>(meshes->minX(), meshes->minY(), meshes->maxX(), meshes->maxY());
+	util::rect<double> size =
+			util::rect<double>(
+					meshes->getBoundingBox().getMinX(),
+					meshes->getBoundingBox().getMinY(),
+					meshes->getBoundingBox().getMaxX(),
+					meshes->getBoundingBox().getMaxY());
 
 	LOG_ALL(meshpainterlog) << "setting size to " << size << std::endl;
 
