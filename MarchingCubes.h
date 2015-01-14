@@ -16,6 +16,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <util/Logger.h>
 #include "Point3d.h"
 #include "Vector3d.h"
 #include "Mesh.h"
