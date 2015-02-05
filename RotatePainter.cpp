@@ -35,23 +35,33 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	if (!_content)
 		return false;
 
+	util::point<double> ul = _content->getSize().upperLeft();
+	util::point<double> lr = _content->getSize().lowerRight();
+
 	OpenGl::Guard guard;
 
 	glMatrixMode(GL_MODELVIEW);
 
 	glPushMatrix();
 
-	// set the light position (before rotating), but don't turn it on, yet
-	GLfloat lightpos[] = {-1.0, 1.0, -1.0, 0.0};
+	// put a light
+	float lightX = -100;
+	float lightY = -100;
+	float lightZ = -100;
+	GLfloat lightpos[] = {lightX, lightY, lightZ, 0.0};
+	glEnable(GL_LIGHT1);
 	glLightfv(GL_LIGHT1, GL_POSITION, lightpos);
-	glDisable(GL_LIGHTING);
+	GLfloat ambient[] = {0.5, 0.5, 0.5, 1.0};
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
+	GLfloat specular[] = {0.3, 0.3, 0.3, 1.0};
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specular);
+	GLfloat diffuse[] = {0.5, 0.5, 0.5, 1.0};
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);
 
+	// perform the rotation
 	glTranslated( _centerX,  _centerY,  _centerZ);
 	glRotated(_w, _x, _y, _z);
 	glTranslated(-_centerX, -_centerY, -_centerZ);
-
-	util::point<double> ul = _content->getSize().upperLeft();
-	util::point<double> lr = _content->getSize().lowerRight();
 
 	glColor4f((_highlight ? 0.88 : 0.1), 0.2, 0.05, 0.5);
 
@@ -79,7 +89,6 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	// draw solid backside
 	glCheck(glEnable(GL_CULL_FACE));
 	glCheck(glEnable(GL_LIGHTING));
-	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
 
 	glBegin(GL_QUADS);
@@ -89,19 +98,10 @@ RotatePainter::draw(const util::rect<double>& roi, const util::point<double>& re
 	glVertex2f(ul.x, lr.y);
 	glEnd();
 
-	// turn on the light
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHT1);
-	GLfloat ambient[] = {0.5, 0.5, 0.5, 1.0};
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-	GLfloat specular[] = {0.3, 0.3, 0.3, 1.0};
-	glLightfv(GL_LIGHT1, GL_SPECULAR, specular);
-	GLfloat diffuse[] = {0.5, 0.5, 0.5, 1.0};
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);
-
 	// draw content
 	bool wantsRedraw = _content->draw(roi, resolution);
+
+	glDisable(GL_LIGHT1);
 
 	glPopMatrix();
 

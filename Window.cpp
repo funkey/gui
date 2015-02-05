@@ -96,22 +96,71 @@ Window::deleteFrameBuffer() {
 void
 Window::configureViewport() {
 
-	// we want to draw everywhere
-	glViewport(0, 0, _resolution.x, _resolution.y);
+	// we want to draw in the entire window
+	glViewport(
+			0,
+			0,
+			_resolution.x,
+			_resolution.y);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	// OpenGl units = pixels
-	glOrtho(0, _resolution.x, _resolution.y, 0, -1000, 1000); // x left, x right, y bottom, y top, z min, z max
-
-	glMatrixMode(GL_MODELVIEW);
-
-	LOG_ALL(winlog) << "[" << getCaption() << "] set drawing area to "
-	                << "(0, 0, " << _resolution.x << ", " << _resolution.y << ")"
-	                << std::endl;
+	gluOrtho2D(
+			0,
+			_resolution.x,
+			_resolution.y,
+			0);
 
 	GL_ASSERT;
+}
+
+void
+Window::redraw() {
+
+	// They say OpenGl is thread safe. They are wrong.
+	//
+	// Update: It seems only buffer creation and destruction is not thread-safe 
+	// (at least on nvidia hardware). Therefore, we lock at a finer scale now.
+
+	//boost::mutex::scoped_lock lock(OpenGl::getMutex());
+
+	// ensure that our context is active
+	OpenGl::Guard guard(this);
+
+	clear();
+
+	LOG_ALL(winlog) << "[" << getCaption() << "] redrawing my content" << endl;
+
+	if (_painter.isSet()) {
+
+		// make sure the painter is up-to-date
+		LOG_ALL(winlog) << "[" << getCaption() << "] updating inputs" << endl;
+		updateInputs();
+		LOG_ALL(winlog) << "[" << getCaption() << "] inputs up-to-date" << endl;
+
+		// draw the updated painter
+		LOG_ALL(winlog) << "[" << getCaption() << "] drawing painter content" << endl;
+		bool wantsRedraw = _painter->draw(_region, point<double>(1.0, 1.0));
+
+		if (wantsRedraw) {
+
+			LOG_ALL(winlog) << "[" << getCaption() << "] painter indicated redraw request -- set myself dirty again" << endl;
+			setDirty();
+		}
+
+	} else {
+
+		LOG_ALL(winlog) << "[" << getCaption() << "] no content so far..." << endl;
+	}
+
+	GL_ASSERT;
+
+	flush();
+
+	GL_ASSERT;
+
+	LOG_ALL(winlog) << "[" << getCaption() << "] finished redrawing" << endl;
 }
 
 const point<double>&
@@ -305,54 +354,6 @@ Window::createGlContext() {
 
 	// return it
 	return glContext;
-}
-
-void
-Window::redraw() {
-
-	// They say OpenGl is thread safe. They are wrong.
-	//
-	// Update: It seems only buffer creation and destruction is not thread-safe 
-	// (at least on nvidia hardware). Therefore, we lock at a finer scale now.
-
-	//boost::mutex::scoped_lock lock(OpenGl::getMutex());
-
-	// ensure that our context is active
-	OpenGl::Guard guard(this);
-
-	clear();
-
-	LOG_ALL(winlog) << "[" << getCaption() << "] redrawing my content" << endl;
-
-	if (_painter.isSet()) {
-
-		// make sure the painter is up-to-date
-		LOG_ALL(winlog) << "[" << getCaption() << "] updating inputs" << endl;
-		updateInputs();
-		LOG_ALL(winlog) << "[" << getCaption() << "] inputs up-to-date" << endl;
-
-		// draw the updated painter
-		LOG_ALL(winlog) << "[" << getCaption() << "] drawing painter content" << endl;
-		bool wantsRedraw = _painter->draw(_region, point<double>(1.0, 1.0));
-
-		if (wantsRedraw) {
-
-			LOG_ALL(winlog) << "[" << getCaption() << "] painter indicated redraw request -- set myself dirty again" << endl;
-			setDirty();
-		}
-
-	} else {
-
-		LOG_ALL(winlog) << "[" << getCaption() << "] no content so far..." << endl;
-	}
-
-	GL_ASSERT;
-
-	flush();
-
-	GL_ASSERT;
-
-	LOG_ALL(winlog) << "[" << getCaption() << "] finished redrawing" << endl;
 }
 
 void

@@ -141,7 +141,7 @@ OpenGl::Guard::Guard() :
 	glColor3f(1.0, 1.0, 1.0);
 	glEnable(GL_BLEND);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_NORMALIZE);
 	glDisable(GL_LIGHTING);
 	glDisable(GL_COLOR_MATERIAL);
 	glDisable(GL_TEXTURE_2D);

@@ -110,6 +110,14 @@ private:
 
 	// the desired size of this painter
 	util::rect<double> _desiredSize;
+
+	// the z-coordinate of the 2D viewing plane, where x and y eye coordinates 
+	// map to x and y screen pixel coordinates
+	double _z2d;
+
+	// z-coordinates of the near and far clipping plane (should contain _z2d)
+	double _zClipNear;
+	double _zClipFar;
 };
 
 } // namespace gui

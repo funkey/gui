@@ -14,7 +14,10 @@ ZoomPainter::ZoomPainter() :
 	_scale(1.0),
 	_shift(0, 0),
 	_autoscale(false),
-	_desiredSize(0, 0, 1, 1) {}
+	_desiredSize(0, 0, 1, 1),
+	_z2d(1000),
+	_zClipNear(1),
+	_zClipFar(2000) {}
 
 void
 ZoomPainter::setContent(boost::shared_ptr<Painter> content) {
@@ -100,13 +103,62 @@ ZoomPainter::draw(const util::rect<double>& roi, const util::point<double>& reso
 
 	OpenGl::Guard guard;
 
+	/* Here, we configre the gl frustum to match the zoomed roi size. In the 
+	 * middle of the frustum, at z = _z2d, we have a plane where the x and y 
+	 * coordinates match the pixels of the roi, such that (x, y) = (0, 0) is the 
+	 * upper left pixel, if _shift is (0, 0).
+	 *
+	 * Further, we change the gl coordinate system, such that we obtain a 
+	 * right-handed coordinate system where the positive directions of x, y, and 
+	 * z point right, down, and back, respectively.
+	 */
+
+	util::rect<double> zoomedRoi = (roi - _shift)/_scale;
+
+	/* To obtain proper perspective deformations, we set the frustum such that 
+	 * the vanishing point is in the middle of the zoomed roi. During drawing, 
+	 * we change the modelview matrix to compensate for that, such that zoomed 
+	 * roi upper left is in the frustum upper left.
+	 */
+
+	/* Next, we simulate the zoom by modifying the frustum: Instead of scaling 
+	 * the world coordinates, we inversely scale the frustum by using the width 
+	 * and height of the zoomed roi.
+	 */
+	double l2d = - zoomedRoi.width()/2;
+	double r2d = l2d + zoomedRoi.width();
+	double t2d = - zoomedRoi.height()/2;
+	double b2d = t2d + zoomedRoi.height();
+
+	double z2d   = _z2d/_scale;
+	double zNear = _zClipNear/_scale;
+	double zFar  = _zClipFar/_scale;
+
+	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
+	glLoadIdentity();
+	glFrustum(
+			l2d*zNear/z2d, // left
+			r2d*zNear/z2d, // right
+			b2d*zNear/z2d, // bottom
+			t2d*zNear/z2d, // top
+			zNear,         // near
+			zFar           // far
+	);
 
-	glTranslated(_shift.x, _shift.y, 0.0);
-	glScaled(_scale, _scale, 1.0);
+	/* It remains to invert the z-axis to obtain the coordinate system as 
+	 * described above. This is done here, together with translating the world 
+	 * coordinates z=0 to z=_z2d and compensating for the upper left of the 
+	 * zoomed roi.
+	 */
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(-zoomedRoi.minX - zoomedRoi.width()/2, -zoomedRoi.minY - zoomedRoi.height()/2, -z2d);
+	glScalef(1, 1, -1);
 
-	bool wantsRedraw = _content->draw((roi - _shift)/_scale, resolution*_scale);
+	bool wantsRedraw = _content->draw(zoomedRoi, resolution*_scale);
 
+	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 
 	return wantsRedraw;

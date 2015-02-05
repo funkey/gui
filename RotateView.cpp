@@ -184,6 +184,12 @@ RotateView::onMouseMove(MouseMove& signal) {
 
 		util::point<double> moved = signal.position - _buttonDown;
 
+		// scale movement with inverse size of content
+		const util::rect<double> contentSize = _content->getSize();
+
+		moved.x /= contentSize.width();
+		moved.y /= contentSize.height();
+
 		//_buttonDown = signal.position;
 
 		// change the current rotation according to mouse movement
@@ -233,10 +239,10 @@ RotateView::rotate(const util::point<double>& moved) {
 	if (dnorm <= 0.0001)
 		return;
 
-	dx = -moved.y/dnorm;
-	dy =  moved.x/dnorm;
+	dx =  moved.y/dnorm;
+	dy = -moved.x/dnorm;
 	dz = 0.0;
-	dw = dnorm/180.0*M_PI;
+	dw = dnorm*M_PI;
 
 	LOG_ALL(rotateviewlog) << "add rotation: " << dw << ", (" << dx << ", " << dy << ", " << dz << ")" << std::endl;
 
